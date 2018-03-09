@@ -1,0 +1,23 @@
+.App {
+  text-align: center;
+}
+.form-search {
+  text-align: center;
+}
+.img
+{
+  align-self: center;
+  height: 7em;
+  width:100%;
+  margin-top: 1em;
+}
+.loader {
+    border: 1.2em solid #f3f3f3; /* Light grey */
+    border-top: 1.2em solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 5em;
+    height: 5em;
+    animation: spin 2s linear infinite;
+    top:50%;
+    left:50%;
+}

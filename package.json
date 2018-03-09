@@ -1,0 +1,28 @@
+{
+  "name": "tactile-graphics",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@google-cloud/storage": "^1.6.0",
+    "@google-cloud/vision": "^0.16.0",
+    "axios": "^0.18.0",
+    "body-parser": "^1.18.2",
+    "cors": "^2.8.4",
+    "express": "^4.16.2",
+    "filereader": "^0.10.3",
+    "googleapis": "^27.0.0",
+    "morgan": "^1.9.0",
+    "nodemon": "^1.17.1",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "react-scripts": "1.1.1",
+    "request": "^2.83.0",
+    "xmlhttprequest": "^1.8.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}

@@ -79,11 +79,7 @@ autoMLRequest = function(token, links, callback) {
   //JUST FOR TESTING:
   //links = "http://moziru.com/images/hosue-clipart-line-drawing-20.jpg"
 
-  var bucketLinks = getBucketElements(links, function(bucketLinks){
-    console.log(bucketLinks)
-  })
-
-
+  getDataURL(links[0])
 
 /*
 
@@ -167,12 +163,16 @@ getDataURL = function(url,callback) {
     resp.on('data', (data) => { body += data});
     resp.on('end', () => {
           uploadToBucket(body, function(url){
+            //URL from google cloud bucket.
           callback(url)
         })
     });
   }).on('error', (e) => {
       console.log(`Got error: ${e.message}`);
   });
+
+
+
 }
 
 uploadToBucket = function(data, callback){

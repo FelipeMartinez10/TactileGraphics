@@ -40,6 +40,7 @@ const bucketName = 'custom-search-images'
 const bucket = gcs.bucket(bucketName);
 function getPublicUrl(filename) {
   return 'https://storage.googleapis.com/' + bucketName + '/' + filename;
+  //return "gs://"+bucketName+"/"+filename
 }
 
 
@@ -63,15 +64,16 @@ app.post('/predict', function(req, res, next) {
 });
 
 
-async function getBucketElements(links,callback) {
+
+async function processArray(links) {
   var bucketLinks = []
+  console.log("Start processing array")
   for(const link of links) {
-    await getDataURL(link, function(url){
-      console.log("proccessing")
-      bucketLinks.push(url)
+    await getDataURLPromise(link).then(function(result){
+      bucketLinks.push(result)
     })
   }
-  callback(bucketLinks)
+  return bucketLinks
 }
 
 autoMLRequest = function(token, links, callback) {
@@ -79,108 +81,107 @@ autoMLRequest = function(token, links, callback) {
   //JUST FOR TESTING:
   //links = "http://moziru.com/images/hosue-clipart-line-drawing-20.jpg"
 
-  getDataURL(links[0])
+  processArray(links).then(function (bucketLinks) {
+    console.log(bucketLinks)
 
-/*
-
-  var requests = []
-  for (i = 0; i < links.length; i++) {
-    requests.push(
-      {
-      "image": {
-        "source": {
-          "imageUri": links[i]
-        }
-      },
-      "features": [
-        {"type": "CUSTOM_LABEL_DETECTION", "maxResults": 10 }
-      ],
-      "customLabelDetectionModels":
-          "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201802221336_base"
-    });
-  }
-
-  var requestsJSON = JSON.stringify(requests);
-  let options = {
-    url: AutoMLURL,
-    method: "POST",
-    headers: {
-      "Authorization": 'Bearer '+token
-    },
-    json: {
-      "requests": requests
-    }
-  };
-  request(options,
-    function(err, res, data) {
-      console.log("AutoML Called")
-      console.log("===========================================")
-      console.log(options)
-      console.log("===========================================")
-      if(err) {
-        console.log('err', err)
-      }
-        if (!err && res.statusCode == 200) {
-          console.log(data.responses)
-          if (data.responses) {
-            var results = []
-            for(i = 0; i < data.responses.length; i++) {
-              var customLabels = data.responses[i].customLabelAnnotations
-              if (customLabels) {
-                var score = customLabels[0].score
-                results.push({
-            			"url": links[i],
-            			"score": score
-            		})
-              } else {
-                console.log("AutoML Error")
-              }
-            }
-            callback(results)
-          } else {
-            console.log("No responses")
+    var requests = []
+    for (i = 0; i < bucketLinks.length; i++) {
+      requests.push(
+        {
+        "image": {
+          "source": {
+            "imageUri": bucketLinks[i]
           }
-        }else {
-          console.log(res)
-        }
+        },
+        "features": [
+          {"type": "CUSTOM_LABEL_DETECTION", "maxResults": 10 }
+        ],
+        "customLabelDetectionModels":
+            "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201802221336_base"
+      });
     }
-  )
-*/
+
+    var requestsJSON = JSON.stringify(requests);
+    let options = {
+      url: AutoMLURL,
+      method: "POST",
+      headers: {
+        "Authorization": 'Bearer '+token,
+        "Content-Type": "application/json"
+      },
+      json: {
+        "requests": requests
+      }
+    };
+    request(options,
+      function(err, res, data) {
+        console.log("AutoML Called")
+        console.log("===========================================")
+        console.log(options)
+        console.log("===========================================")
+        if(err) {
+          console.log('err', err)
+        }
+          if (!err && res.statusCode == 200) {
+            console.log(data.responses)
+            if (data.responses) {
+              var results = []
+              for(i = 0; i < data.responses.length; i++) {
+                var customLabels = data.responses[i].customLabelAnnotations
+                if (customLabels) {
+                  var score = customLabels[0].score
+                  results.push({
+              			"url": links[i],
+              			"score": score
+              		})
+                } else {
+                  console.log("AutoML Error")
+                }
+              }
+              callback(results)
+            } else {
+              console.log("No responses")
+            }
+          }else {
+            console.log(res.body)
+          }
+      }
+    )
+  })
 }
 
 
+getDataURLPromise = function(url) {
 
-getDataURL = function(url,callback) {
-  var client = http;
-  // You can use url.protocol as well
-  //console.log(url)
-  if (url.indexOf("https") === 0){
-    client = https;
-  }
-  client.get(url, (resp) => {
-    resp.setEncoding('base64');
-    body = ""
-    resp.on('data', (data) => { body += data});
-    resp.on('end', () => {
-          uploadToBucket(body, function(url){
-            //URL from google cloud bucket.
-          callback(url)
-        })
+  return new Promise(function(resolve, reject) {
+
+    var client = http;
+    if (url.indexOf("https") === 0){
+      client = https;
+    }
+    client.get(url, (resp) => {
+      resp.setEncoding('base64');
+      body = ""
+      resp.on('data', (data) => { body += data});
+      resp.on('end', () => {
+            uploadToBucket(body, function(url){
+              resolve(url)
+          })
+      });
+    }).on('error', (e) => {
+        console.log(`Got error: ${e.message}`);
+        reject(Error("It broke"));
     });
-  }).on('error', (e) => {
-      console.log(`Got error: ${e.message}`);
   });
-
-
-
 }
+
 
 uploadToBucket = function(data, callback){
   var bufferStream = new stream.PassThrough();
   bufferStream.end(new Buffer(data, 'base64'));
 
   var date = Date.now()
-  var fileName = date+"_custom_search.jpg"
+  var fileName = date+"_custom_search"
   var file = bucket.file(fileName);
   bufferStream.pipe(file.createWriteStream({
     metadata: {
@@ -192,7 +193,7 @@ uploadToBucket = function(data, callback){
     public: true,
     validation: "md5"
   }))
-  .on('error', function(err) {})
+  .on('error', function(err) {console.log(err)})
   .on('finish', function() {
     // The file upload is complete.
     bufferStream = null

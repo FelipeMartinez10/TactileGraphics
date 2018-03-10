@@ -17,10 +17,10 @@ class Image extends Component {
       console.log(this.props.prediction)
       var backColor = "";
       var quality = ""
-      if(this.props.prediction.score >= 0.85) {
+      if(this.props.prediction.score >= 0.9) {
         backColor = {backgroundColor: "#D5E8D4", color: "#4E4E4E"};
         quality = "Good"
-      } else if(this.props.prediction.score >= 0.60) {
+      } else if(this.props.prediction.score >= 0.75) {
         backColor = {backgroundColor: "#FFF2CC", color: "#4E4E4E"};
         quality = "Fair"
       } else {

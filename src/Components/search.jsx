@@ -25,19 +25,19 @@ class Search extends Component {
       console.log("Function called")
 
       //   For testing:
-      this.setState({
+    /*  this.setState({
         images: ["https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDHWbQUlc0weTkX-dBHcDVNMcdPkCFF9jKsOfRFMjpYJXbRtKwXhA3zQ",
         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDHWbQUlc0weTkX-dBHcDVNMcdPkCFF9jKsOfRFMjpYJXbRtKwXhA3zQ"]
       },() => {
         this.predictAutoML(this.state.images)
       });
-
+*/
 
 
     //  this.predictAutoML(this.state.images)
 
       //fileType=png
-/*
+
     axios.get(URL+this.state.query+"%20clipart&imgColorType=gray&imgType=clipart&searchType=image&imgDominantColor=black&fileType=jpg").then(response => {
       if(response.data.items) {
         var links =[]
@@ -57,7 +57,7 @@ class Search extends Component {
         console.log("Nothing Found")
       }
     });
-    */
+    
   }
 
 

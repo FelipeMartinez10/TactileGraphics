@@ -12,6 +12,10 @@ const http = require('http');
 const https = require('https');
 const key = require('../private/key.json');
 
+
+const Model1 = "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201802221336_base";
+const Model2 = "projects/ml-for-tactile-graphics/models/Tactile_graphics2/versions/Tactile_graphics2_201803091747_base";
+
 const storage = require('@google-cloud/storage');
 const fs = require('fs')
 
@@ -82,7 +86,7 @@ autoMLRequest = function(token, links, callback) {
   //links = "http://moziru.com/images/hosue-clipart-line-drawing-20.jpg"
 
   processArray(links).then(function (bucketLinks) {
-    console.log(bucketLinks)
+    //console.log(bucketLinks)
 
     var requests = []
     for (i = 0; i < bucketLinks.length; i++) {
@@ -96,8 +100,7 @@ autoMLRequest = function(token, links, callback) {
         "features": [
           {"type": "CUSTOM_LABEL_DETECTION", "maxResults": 10 }
         ],
-        "customLabelDetectionModels":
-            "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201802221336_base"
+        "customLabelDetectionModels": Model2
       });
     }
 
@@ -130,9 +133,11 @@ autoMLRequest = function(token, links, callback) {
                 var customLabels = data.responses[i].customLabelAnnotations
                 if (customLabels) {
                   var score = customLabels[0].score
+                  var label = customLabels[0].label
                   results.push({
               			"url": links[i],
-              			"score": score
+              			"score": score,
+                    "label": label
               		})
                 } else {
                   console.log("AutoML Error")

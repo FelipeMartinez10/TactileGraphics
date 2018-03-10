@@ -1,5 +1,4 @@
 import React, {Component} from 'react';
-import axios from 'axios';
 import '../App.css';
 
 class Image extends Component {
@@ -17,10 +16,10 @@ class Image extends Component {
       console.log(this.props.prediction)
       var backColor = "";
       var quality = ""
-      if(this.props.prediction.score >= 0.9) {
+      if(this.props.prediction.score >= 0.9 && this.props.prediction.label === "positive") {
         backColor = {backgroundColor: "#D5E8D4", color: "#4E4E4E"};
         quality = "Good"
-      } else if(this.props.prediction.score >= 0.75) {
+      } else if(this.props.prediction.score >= 0.75 && this.props.prediction.label === "positive") {
         backColor = {backgroundColor: "#FFF2CC", color: "#4E4E4E"};
         quality = "Fair"
       } else {

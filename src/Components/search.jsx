@@ -41,7 +41,7 @@ class Search extends Component {
     axios.get(URL+this.state.query+"%20clipart&imgColorType=gray&imgType=clipart&searchType=image&imgDominantColor=black&fileType=jpg").then(response => {
       if(response.data.items) {
         var links =[]
-        console.log(response.data.items)
+        //console.log(response.data.items)
         for(var i = 0; i < response.data.items.length; i++) {
         //for(var i = 0; i < 2; i++) {
           links.push(response.data.items[i].image.thumbnailLink)
@@ -49,6 +49,7 @@ class Search extends Component {
         }
         this.setState({
           images: links,
+          predictions: []
         },() => {
           this.predictAutoML(this.state.images)
         });
@@ -57,7 +58,7 @@ class Search extends Component {
         console.log("Nothing Found")
       }
     });
-    
+
   }
 
 
@@ -82,7 +83,7 @@ class Search extends Component {
 
     render() {
       const isFull = this.state.full
-      console.log(this.state)
+      //console.log(this.state)
         return (
           <div className ="container">
             <div className = "row">

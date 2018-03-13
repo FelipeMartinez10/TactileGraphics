@@ -3,6 +3,7 @@ import '../App.css';
 import axios from 'axios';
 import Image from './image.jsx';
 import frontVariables from '../privateKeys/frontVariables.js'
+import { BarLoader } from 'react-spinners';
 
 const URL = "https://www.googleapis.com/customsearch/v1?key="+frontVariables.key+"&cx=004485904051950933441:5x_3_wemizq&q="
 const serverURL = "http://localhost:3333"
@@ -15,14 +16,20 @@ class Search extends Component {
         query:"",
         images:[],
         full: false,
-        predictions:[]
+        predictions:[],
+        loading: false
       }
       this.predictAutoML = this.predictAutoML.bind(this)
+      this.compare = this.compare.bind(this)
     }
 
 
     getSearchResults() {
       console.log("Function called")
+      this.setState({
+        predictions:[],
+        loading: true
+      });
 
       //   For testing:
     /*  this.setState({
@@ -70,15 +77,41 @@ class Search extends Component {
     var body = {
     	"links": links
     }
+    console.log("Predict")
     axios.post(serverURL+"/predict", body, config)
     .then(response => {
       console.log(response.data.predictions)
+      var predictionsSorted = response.data.predictions
+      if(response.data.predictions.length >0){
+        predictionsSorted.sort(this.compare)
+      } else{
+        alert("There was an error while processing your search. Please wait a few seconds and try again.")
+      }
       this.setState({
-        predictions: response.data.predictions,
+        predictions: predictionsSorted,
         full: true,
-        images:[]
+        images:[],
+        loading: false
       });
     });
+  }
+
+  compare(a,b) {
+    var scoreA = a.score
+    var scoreB = b.score
+    if (a.label === "negative"){
+      scoreA = 1 - scoreA;
+    }
+    if (b.label === "negative"){
+      scoreB = 1 - scoreB;
+    }
+    if (scoreA < scoreB){
+      return 1;
+    }
+    if (scoreA > scoreB){
+      return -1;
+    }
+    return 0;
   }
 
     render() {
@@ -119,6 +152,12 @@ class Search extends Component {
                   return <Image key={index} prediction={pre} />
                 }) )
               : (<p></p>)}
+              <div id='loader'>
+                <BarLoader
+                    color={'#337ab7'}
+                    loading={this.state.loading}
+                  />
+              </div>
               </div>
               <div className="col-md-2"></div>
             </div>

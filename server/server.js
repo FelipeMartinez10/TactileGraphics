@@ -149,6 +149,8 @@ autoMLRequest = function(token, links, callback) {
             }
           }else {
             console.log(res.body)
+            var empty = []
+            callback(empty)
           }
       }
     )

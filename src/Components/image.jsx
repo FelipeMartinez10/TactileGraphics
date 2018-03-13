@@ -13,7 +13,7 @@ class Image extends Component {
 
 //this.props.image.image.thumbnailLink
     render() {
-      console.log(this.props.prediction)
+      //console.log(this.props.prediction)
       var backColor = "";
       var quality = ""
       if(this.props.prediction.score >= 0.9 && this.props.prediction.label === "positive") {

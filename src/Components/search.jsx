@@ -64,6 +64,12 @@ class Search extends Component {
       else {
         console.log("Nothing Found")
       }
+    }).catch((error)=> {
+      console.log(error)
+      alert("There was an error processing your search. Wait a few seconds and try again.");
+      this.setState({
+        loading:false
+      });
     });
 
   }
@@ -85,7 +91,7 @@ class Search extends Component {
       if(response.data.predictions.length >0){
         predictionsSorted.sort(this.compare)
       } else{
-        alert("There was an error while processing your search. Please wait a few seconds and try again.")
+        alert("There was an error processing your search. Wait a few seconds and try again.")
       }
       this.setState({
         predictions: predictionsSorted,
@@ -93,6 +99,13 @@ class Search extends Component {
         images:[],
         loading: false
       });
+    }).catch((error)=>{
+      console.log(error)
+      alert("There was an error processing your search. Wait a few seconds and try again.");
+      this.setState({
+        loading:false
+      });
+
     });
   }
 

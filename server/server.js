@@ -14,7 +14,10 @@ const key = require('../private/key.json');
 
 
 const Model1 = "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201802221336_base";
+const Model1_1= "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201803091738_base";
 const Model2 = "projects/ml-for-tactile-graphics/models/Tactile_graphics2/versions/Tactile_graphics2_201803091747_base";
+
+const currentModel = Model2;
 
 const storage = require('@google-cloud/storage');
 const fs = require('fs')
@@ -100,7 +103,7 @@ autoMLRequest = function(token, links, callback) {
         "features": [
           {"type": "CUSTOM_LABEL_DETECTION", "maxResults": 10 }
         ],
-        "customLabelDetectionModels": Model2
+        "customLabelDetectionModels": currentModel
       });
     }
 

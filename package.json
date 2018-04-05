@@ -18,6 +18,7 @@
     "react-scripts": "1.1.1",
     "react-spinners": "^0.2.6",
     "request": "^2.83.0",
+    "threads": "^0.10.1",
     "xmlhttprequest": "^1.8.0"
   },
   "scripts": {

@@ -28,6 +28,7 @@ const stream = require('stream');
 
 app.use(cors());
 
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -73,13 +74,13 @@ app.post('/predict', function(req, res, next) {
 
 
 async function processArray(links) {
-  var bucketLinks = []
+  var bucketLinks = ["link1", "link2"]
   console.log("Start processing array")
-  for(const link of links) {
+/*  for(const link of links) {
     await getDataURLPromise(link).then(function(result){
       bucketLinks.push(result)
     })
-  }
+  }*/
   return bucketLinks
 }
 
@@ -90,7 +91,6 @@ autoMLRequest = function(token, links, callback) {
 
   processArray(links).then(function (bucketLinks) {
     //console.log(bucketLinks)
-
     var requests = []
     for (i = 0; i < bucketLinks.length; i++) {
       requests.push(
@@ -106,7 +106,7 @@ autoMLRequest = function(token, links, callback) {
         "customLabelDetectionModels": currentModel
       });
     }
-
+/*
     var requestsJSON = JSON.stringify(requests);
     let options = {
       url: AutoMLURL,
@@ -119,6 +119,7 @@ autoMLRequest = function(token, links, callback) {
         "requests": requests
       }
     };
+
     request(options,
       function(err, res, data) {
         console.log("AutoML Called")
@@ -129,7 +130,7 @@ autoMLRequest = function(token, links, callback) {
           console.log('err', err)
         }
           if (!err && res.statusCode == 200) {
-            console.log(data.responses)
+            console.log(res.body)
             if (data.responses) {
               var results = []
               for(i = 0; i < data.responses.length; i++) {
@@ -156,7 +157,7 @@ autoMLRequest = function(token, links, callback) {
             callback(empty)
           }
       }
-    )
+    )*/
   })
 }
 
@@ -215,5 +216,6 @@ uploadToBucket = function(data, callback){
 
 
 
-app.listen(3333);
+const server = app.listen(3333);
 console.log('Listening on localhost:3333');
+server.timeout = 300000;

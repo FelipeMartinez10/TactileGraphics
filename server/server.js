@@ -16,8 +16,8 @@ const key = require('../private/key.json');
 const Model1 = "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201802221336_base";
 const Model1_1= "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201803091738_base";
 const Model2 = "projects/ml-for-tactile-graphics/models/Tactile_graphics2/versions/Tactile_graphics2_201803091747_base";
-
-const currentModel = Model2;
+const Model2_2 = "projects/ml-for-tactile-graphics/models/Tactile_graphics2/versions/Tactile_graphics2_201804061022_base";
+const currentModel = Model2_2;
 
 const storage = require('@google-cloud/storage');
 const fs = require('fs')
@@ -74,40 +74,31 @@ app.post('/predict', function(req, res, next) {
 
 
 async function processArray(links) {
-  var bucketLinks = ["link1", "link2"]
+  var bucketLinks = [];
   console.log("Start processing array")
-/*  for(const link of links) {
+  for(const link of links) {
     await getDataURLPromise(link).then(function(result){
       bucketLinks.push(result)
     })
-  }*/
-  return bucketLinks
+  }
+  return bucketLinks;
 }
 
-autoMLRequest = function(token, links, callback) {
+asyncRequests = function(token, link, bucketLink) {
 
-  //JUST FOR TESTING:
-  //links = "http://moziru.com/images/hosue-clipart-line-drawing-20.jpg"
-
-  processArray(links).then(function (bucketLinks) {
-    //console.log(bucketLinks)
-    var requests = []
-    for (i = 0; i < bucketLinks.length; i++) {
-      requests.push(
-        {
-        "image": {
-          "source": {
-            "imageUri": bucketLinks[i]
-          }
-        },
-        "features": [
-          {"type": "CUSTOM_LABEL_DETECTION", "maxResults": 10 }
-        ],
-        "customLabelDetectionModels": currentModel
-      });
-    }
-/*
-    var requestsJSON = JSON.stringify(requests);
+  return new Promise(function(resolve, reject) {
+    var requests = [
+      {
+      "image": {
+        "source": {
+          "imageUri": bucketLink
+        }
+      },
+      "features": [
+        {"type": "CUSTOM_LABEL_DETECTION", "maxResults": 10 }
+      ],
+      "customLabelDetectionModels": currentModel
+    }];
     let options = {
       url: AutoMLURL,
       method: "POST",
@@ -130,42 +121,65 @@ autoMLRequest = function(token, links, callback) {
           console.log('err', err)
         }
           if (!err && res.statusCode == 200) {
-            console.log(res.body)
+            console.log(res.body.responses)
             if (data.responses) {
-              var results = []
               for(i = 0; i < data.responses.length; i++) {
                 var customLabels = data.responses[i].customLabelAnnotations
                 if (customLabels) {
                   var score = customLabels[0].score
                   var label = customLabels[0].label
-                  results.push({
-              			"url": links[i],
+                  var results = {
+              			"url": link,
               			"score": score,
                     "label": label
-              		})
+              		}
                 } else {
                   console.log("AutoML Error")
                 }
               }
-              callback(results)
+              resolve(results)
             } else {
               console.log("No responses")
             }
           }else {
             console.log(res.body)
             var empty = []
-            callback(empty)
+            resolve(empty)
           }
       }
-    )*/
-  })
+    )
+  });
+}
+
+autoMLRequest = function(token, links, callback) {
+
+  //JUST FOR TESTING:
+  //links = "http://moziru.com/images/hosue-clipart-line-drawing-20.jpg"
+  var bucketPromises = [];
+  for (i = 0; i < links.length; i++) {
+     bucketPromises.push(getDataURLPromise(links[i]));
+  }
+  Promise.all(bucketPromises).then(bucketLinks =>{
+    var promises = [];
+    var results = [];
+    for (i = 0; i < bucketLinks.length; i++) {
+      // promises.push(asyncRequests(token, links[i], bucketLinks[i]));
+    }
+    Promise.all(promises).then(values => {
+      console.log("Values");
+      console.log(values);
+      callback(values);
+    });
+  });
 }
 
 
 getDataURLPromise = function(url) {
 
   return new Promise(function(resolve, reject) {
+    //resolve(url);
 
+    console.log("getDataCalled");
     var client = http;
     if (url.indexOf("https") === 0){
       client = https;
@@ -175,9 +189,11 @@ getDataURLPromise = function(url) {
       body = ""
       resp.on('data', (data) => { body += data});
       resp.on('end', () => {
-            uploadToBucket(body, function(url){
+          /*  uploadToBucket(body, function(url){
+              console.log("getDataEnd");
               resolve(url)
-          })
+          })*/
+          console.log(body);
       });
     }).on('error', (e) => {
         console.log(`Got error: ${e.message}`);

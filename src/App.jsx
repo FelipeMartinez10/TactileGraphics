@@ -4,7 +4,6 @@ import Search from './Components/search.jsx';
 
 class App extends Component {
 
-
   render() {
     return (
       <div className="App container">

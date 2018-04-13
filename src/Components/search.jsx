@@ -37,13 +37,12 @@ class Search extends Component {
         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDHWbQUlc0weTkX-dBHcDVNMcdPkCFF9jKsOfRFMjpYJXbRtKwXhA3zQ"]
       },() => {
         this.predictAutoML(this.state.images)
-      });
-*/
+      });*/
+
 
 
     //  this.predictAutoML(this.state.images)
 
-      //fileType=png
 
     axios.get(URL+this.state.query+"%20clipart&imgColorType=gray&imgType=clipart&searchType=image&imgDominantColor=black&fileType=jpg").then(response => {
       if(response.data.items) {
@@ -87,7 +86,7 @@ class Search extends Component {
     axios.post(serverURL+"/predict", body, config)
     .then(response => {
       console.log(response.data.predictions)
-      var predictionsSorted = response.data.predictions
+      var predictionsSorted = response.data.predictions.filter(function(n){ return n != undefined });
       if(response.data.predictions.length >0){
         predictionsSorted.sort(this.compare)
       } else{
@@ -162,7 +161,11 @@ class Search extends Component {
               <div className="col-md-2"></div>
               <div className="col-md-8">
                 {isFull ? (this.state.predictions.map((pre, index) =>{
-                  return <Image key={index} prediction={pre} />
+                  if(pre != null){
+                    if(pre.score != null){
+                      return <Image key={index} prediction={pre} />
+                    }
+                  }
                 }) )
               : (<p></p>)}
               <div id='loader'>

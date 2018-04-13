@@ -89,16 +89,19 @@ asyncRequests = function(token, link, bucketLink) {
   return new Promise(function(resolve, reject) {
     var requests = [
       {
-      "image": {
-        "source": {
-          "imageUri": bucketLink
-        }
-      },
-      "features": [
-        {"type": "CUSTOM_LABEL_DETECTION", "maxResults": 10 }
-      ],
-      "customLabelDetectionModels": currentModel
-    }];
+        "image": {
+          "content": bucketLink
+        },
+        "features": [
+          {
+            "type": "CUSTOM_LABEL_DETECTION"
+          }
+        ],
+        "customLabelDetectionModels": [
+          currentModel
+        ],
+      }
+      ];
     let options = {
       url: AutoMLURL,
       method: "POST",
@@ -115,7 +118,7 @@ asyncRequests = function(token, link, bucketLink) {
       function(err, res, data) {
         console.log("AutoML Called")
         console.log("===========================================")
-        console.log(options)
+        //console.log(options)
         console.log("===========================================")
         if(err) {
           console.log('err', err)
@@ -163,7 +166,7 @@ autoMLRequest = function(token, links, callback) {
     var promises = [];
     var results = [];
     for (i = 0; i < bucketLinks.length; i++) {
-      // promises.push(asyncRequests(token, links[i], bucketLinks[i]));
+      promises.push(asyncRequests(token, links[i], bucketLinks[i]));
     }
     Promise.all(promises).then(values => {
       console.log("Values");
@@ -186,14 +189,14 @@ getDataURLPromise = function(url) {
     }
     client.get(url, (resp) => {
       resp.setEncoding('base64');
-      body = ""
+      var body = ""
       resp.on('data', (data) => { body += data});
       resp.on('end', () => {
           /*  uploadToBucket(body, function(url){
               console.log("getDataEnd");
               resolve(url)
           })*/
-          console.log(body);
+          resolve(body);
       });
     }).on('error', (e) => {
         console.log(`Got error: ${e.message}`);

@@ -22,7 +22,7 @@
     "xmlhttprequest": "^1.8.0"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "react-scripts start & node server/server",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"

@@ -2,10 +2,11 @@ import React, {Component} from 'react';
 import '../App.css';
 import axios from 'axios';
 import Image from './image.jsx';
-import frontVariables from '../privateKeys/frontVariables.js'
+//import frontVariables from '../privateKeys/frontVariables.js'
 import { BarLoader } from 'react-spinners';
 
-const URL = "https://www.googleapis.com/customsearch/v1?key="+frontVariables.key+"&cx=004485904051950933441:5x_3_wemizq&q="
+//const URL = "https://www.googleapis.com/customsearch/v1?key="+frontVariables.key+"&cx=004485904051950933441:5x_3_wemizq&q="
+const URL = "https://www.googleapis.com/customsearch/v1?key="+process.env.CUSTOM_SEARCH+"&cx=004485904051950933441:5x_3_wemizq&q="
 const serverURL = "http://localhost:3333"
 
 class Search extends Component {

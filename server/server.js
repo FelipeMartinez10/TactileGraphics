@@ -11,7 +11,7 @@ const BucketURL = "https://www.googleapis.com/upload/storage/v1/b/custom-search-
 const http = require('http');
 const https = require('https');
 //const key = require('../private/key.json');
-const key = procces.env;
+const key = process.env;
 
 
 const Model1 = "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201802221336_base";

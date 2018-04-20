@@ -11,6 +11,17 @@
   width:100%;
   margin-top: 1em;
 }
+.img:hover
+{
+  cursor: pointer;
+}
 #loader{
   display: inline-block;
+}
+.box{
+    border-radius: 1em;
+    padding: 1em 2em;
+    display: block;
+    margin-top: 3em;
+    border: 0.1em solid rgba(0, 0, 0, 0.1);
 }

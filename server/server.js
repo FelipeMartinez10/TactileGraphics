@@ -56,16 +56,16 @@ function getPublicUrl(filename) {
 
 app.post('/predict', function(req, res, next) {
 
-  var links = req.body.links;
-
+  //Get the image link
+  var link = req.body.link;
+  //Generate AutoML Token
   jwtClient.authorize(function (err, tokens) {
     if (err) {
       console.log(err);
       return;
     }
     var accessToken = tokens.access_token
-    //console.log(accessToken)
-    autoMLRequest(accessToken, links,function(predictions){
+    autoMLRequest(accessToken, link, function(predictions){
       response = {"predictions":predictions}
       res.json(response);
     })
@@ -73,7 +73,7 @@ app.post('/predict', function(req, res, next) {
 });
 
 
-
+//This function was used to upload images to bucket.
 async function processArray(links) {
   var bucketLinks = [];
   console.log("Start processing array")
@@ -85,24 +85,16 @@ async function processArray(links) {
   return bucketLinks;
 }
 
-asyncRequests = function(token, link, bucketLink) {
+
+asyncRequest = function(token, link, base64Body) {
 
   return new Promise(function(resolve, reject) {
-    var requests = [
-      {
-        "image": {
-          "content": bucketLink
-        },
-        "features": [
-          {
-            "type": "CUSTOM_LABEL_DETECTION"
-          }
-        ],
-        "customLabelDetectionModels": [
+
+    var requests = [{ "image": { "content": base64Body }, "features": [
+          { "type": "CUSTOM_LABEL_DETECTION" }], "customLabelDetectionModels": [
           currentModel
         ],
-      }
-      ];
+      }];
     let options = {
       url: AutoMLURL,
       method: "POST",
@@ -114,9 +106,7 @@ asyncRequests = function(token, link, bucketLink) {
         "requests": requests
       }
     };
-
-    request(options,
-      function(err, res, data) {
+    request(options, function(err, res, data) {
         console.log("AutoML Called")
         console.log("===========================================")
         //console.log(options)
@@ -155,34 +145,20 @@ asyncRequests = function(token, link, bucketLink) {
   });
 }
 
-autoMLRequest = function(token, links, callback) {
-
-  //JUST FOR TESTING:
-  //links = "http://moziru.com/images/hosue-clipart-line-drawing-20.jpg"
-  var bucketPromises = [];
-  for (i = 0; i < links.length; i++) {
-     bucketPromises.push(getDataURLPromise(links[i]));
-  }
-  Promise.all(bucketPromises).then(bucketLinks =>{
-    var promises = [];
-    var results = [];
-    for (i = 0; i < bucketLinks.length; i++) {
-      promises.push(asyncRequests(token, links[i], bucketLinks[i]));
-    }
-    Promise.all(promises).then(values => {
-      console.log("Values");
-      console.log(values);
-      callback(values);
+autoMLRequest = function(token, link, callback) {
+  var getDataPromise = getDataURLPromise(link);
+  getDataPromise.then(base64Body =>{
+    var autoMLrequestPromise = asyncRequest(token, link, base64Body)
+    autoMLrequestPromise.then(value =>{
+      console.log(value);
+      callback(value);
     });
   });
 }
 
 
 getDataURLPromise = function(url) {
-
   return new Promise(function(resolve, reject) {
-    //resolve(url);
-
     console.log("getDataCalled");
     var client = http;
     if (url.indexOf("https") === 0){
@@ -193,10 +169,6 @@ getDataURLPromise = function(url) {
       var body = ""
       resp.on('data', (data) => { body += data});
       resp.on('end', () => {
-          /*  uploadToBucket(body, function(url){
-              console.log("getDataEnd");
-              resolve(url)
-          })*/
           resolve(body);
       });
     }).on('error', (e) => {
@@ -206,7 +178,7 @@ getDataURLPromise = function(url) {
   });
 }
 
-
+//This function was used to upload images to bucket.
 uploadToBucket = function(data, callback){
   var bufferStream = new stream.PassThrough();
   bufferStream.end(new Buffer(data, 'base64'));

@@ -7,7 +7,7 @@ import { BarLoader } from 'react-spinners';
 
 
 //const googleCustomSearchURL = "%20clipart&imgColorType=gray&imgType=clipart&searchType=image&imgDominantColor=black&fileType=jpg"
-const googleCustomSearchURL = "%20clipart&imgColorType=gray&imgType=clipart&searchType=image&imgDominantColor=black"
+const googleCustomSearchURL = "%20simple%20clipart&imgColorType=gray&searchType=image&imgDominantColor=gray&imgDominantColor=black"
 const URL = "https://www.googleapis.com/customsearch/v1?key="+frontVariables.key+"&cx=004485904051950933441:5x_3_wemizq&q="
 //const URL = "https://www.googleapis.com/customsearch/v1?key="+process.env.REACT_APP_CUSTOM_SEARCH+"&cx=004485904051950933441:5x_3_wemizq&q="
 const serverURL = "http://localhost:3333"
@@ -22,69 +22,45 @@ class Search extends Component {
         full: false,
         predictions:[],
         loading: false,
+        sendingImage: false,
         predictionsMade: 0,
-        selectedURL: ""
+        selectedURL: "",
+        selectedBool: false,
+        selectedPrediction: {},
+        selectedOption: ""
       }
-      this.predictAutoML = this.predictAutoML.bind(this)
-      this.compare = this.compare.bind(this)
-      this.selectImage = this.selectImage.bind(this)
-      this.deselectImage = this.deselectImage.bind(this)
+      this.predictAutoML = this.predictAutoML.bind(this);
+      this.compare = this.compare.bind(this);
+      this.selectImage = this.selectImage.bind(this);
+      this.deselectImage = this.deselectImage.bind(this);
+      this.radioButton = this.radioButton.bind(this);
+      this.addImageToModel = this.addImageToModel.bind(this);
+      this.uploadToBucket = this.uploadToBucket.bind(this);
     }
 
-    selectImage(url){
-      console.log("Select called")
-      this.setState({
-        selectedURL: url
-      });
+    selectImage(prediction){
+      console.log("Select called");
+      if(prediction.url === this.state.selectedURL){
+        this.deselectImage();
+      }else{
+        this.setState({
+          selectedPrediction: prediction,
+          selectedURL: prediction.url,
+          selectedBool: true,
+          selectedOption: ""
+        });
+      }
     }
+
     deselectImage(){
       this.setState({
-        selectedURL: ""
+        selectedPrediction: {},
+        selectedURL: "",
+        selectedBool: false
       });
     }
 
     getSearchResults() {
-      //For testing
-    /*  this.setState({
-        predictions: [{
-          "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJo9fjr9iANo0QuhEKtSUlAOie15cwbfV--5lEHZhH9DUpyDqPQRi2A3Y",
-          "score": 0.999,
-          "label": "negative"
-        },{
-          "url": "http://simplephotoshop.com/elementsplus/px/deselect-path-dia.png",
-          "score": 0.999,
-          "label": "negative"
-        },{
-          "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJo9fjr9iANo0QuhEKtSUlAOie15cwbfV--5lEHZhH9DUpyDqPQRi2A3Y",
-          "score": 0.999,
-          "label": "negative"
-        },{
-          "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJo9fjr9iANo0QuhEKtSUlAOie15cwbfV--5lEHZhH9DUpyDqPQRi2A3Y",
-          "score": 0.999,
-          "label": "negative"
-        },{
-          "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJo9fjr9iANo0QuhEKtSUlAOie15cwbfV--5lEHZhH9DUpyDqPQRi2A3Y",
-          "score": 0.999,
-          "label": "negative"
-        },{
-          "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJo9fjr9iANo0QuhEKtSUlAOie15cwbfV--5lEHZhH9DUpyDqPQRi2A3Y",
-          "score": 0.999,
-          "label": "negative"
-        },{
-          "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJo9fjr9iANo0QuhEKtSUlAOie15cwbfV--5lEHZhH9DUpyDqPQRi2A3Y",
-          "score": 0.999,
-          "label": "negative"
-        },{
-          "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJo9fjr9iANo0QuhEKtSUlAOie15cwbfV--5lEHZhH9DUpyDqPQRi2A3Y",
-          "score": 0.999,
-          "label": "negative"
-        }],
-        full: true,
-        images:[],
-        loading: false
-      });
-      return;*/
-
       console.log("Function called")
       this.setState({
         predictions:[],
@@ -98,7 +74,6 @@ class Search extends Component {
           this.predictAutoML(response.data.items[i].image.thumbnailLink)
           links.push(response.data.items[i].image.thumbnailLink)
         }
-
       }
       else {
         console.log("Nothing Found")
@@ -112,8 +87,6 @@ class Search extends Component {
     });
   }
 
-
-
   predictAutoML(link) {
     var config = {
       headers: {'Content-type': 'application/json'}
@@ -124,6 +97,7 @@ class Search extends Component {
     //console.log("Predict")
     axios.post(serverURL+"/predict", body, config)
     .then(response => {
+      console.log(response);
       var predictionsCount = this.state.predictionsMade;
       predictionsCount ++;
       this.setState({
@@ -184,9 +158,83 @@ class Search extends Component {
     return 0;
   }
 
+  addImageToModel(){
+    console.log(this.state.selectedOption);
+    if(this.state.selectedOption === ""){
+      alert("You must select a category for the image. Select \"Positive\", if the image is simple enough to be used as a tactile graphic. Otherwise, select \"Negative\". If you are not sure, do not send the image.");
+      return
+    } else{
+      this.setState({
+        sendingImage: true
+      });
+      let imageURL = this.state.selectedPrediction.url;
+      let label = this.state.selectedOption;
+      this.uploadToBucket(imageURL, label);
+
+    }
+  }
+
+  radioButton(event){
+    this.setState({
+      selectedOption: event.target.value
+    });
+  }
+
+  uploadToBucket(link, label) {
+    var config = {
+      headers: {'Content-type': 'application/json'}
+    };
+    var body = {
+      "link": link,
+      "label": label
+    }
+    axios.post(serverURL+"/upload", body, config)
+    .then(response => {
+      console.log(response);
+      if(response.data.upload != ""){
+        this.setState({
+          sendingImage: false
+        });
+        alert("The image was sent to the model. When enough images have been sent, the model will be retrained and improved.");
+        this.deselectImage()
+      }
+    }).catch((error)=>{
+      console.log(error);
+      this.setState({
+        sendingImage: false
+      });
+    });
+  }
+
     render() {
       const isFull = this.state.full
       //console.log(this.state)
+      var selected = this.state.selectedBool;
+      if(selected){
+        var backColor = "";
+        var quality = "";
+        if(this.state.selectedPrediction.score >= 0.9 && this.state.selectedPrediction.label === "positive") {
+          backColor = {backgroundColor: "#D5E8D4", color: "#4E4E4E"};
+          quality = "Good";
+        } else if(this.state.selectedPrediction.score >= 0.75 && this.state.selectedPrediction.label === "positive") {
+          backColor = {backgroundColor: "#FFF2CC", color: "#4E4E4E"};
+          quality = "Fair";
+        } else {
+          backColor = {backgroundColor: "#F8CECC", color: "#4E4E4E"};
+          quality = "Bad";
+        }
+        var negative = 0
+        var positive = 0
+        if(this.state.selectedPrediction.label === "positive"){
+          negative = 1 - this.state.selectedPrediction.score;
+          positive = this.state.selectedPrediction.score;
+        }else{
+          positive = 1 - this.state.selectedPrediction.score;
+          negative = this.state.selectedPrediction.score;
+        }
+        negative = negative.toFixed(3);
+        positive = positive.toFixed(3);
+      }
         return (
           <div className ="container">
             <div className = "row">
@@ -218,24 +266,65 @@ class Search extends Component {
               <hr className="divisor"></hr>
               <div className="col-md-2"></div>
               <div className="col-md-8">
-                {isFull ? (this.state.predictions.map((pre, index) =>{
-                  if(pre != null){
-                    if(pre.score != null){
-                      if(pre.url === this.state.selectedURL){
-                        return <Image key={index} prediction={pre} select={this.selectImage} selectedBool={true} deselect={this.deselectImage} />
-                      } else{
-                        return <Image key={index} prediction={pre} select={this.selectImage} selectedBool={false} deselect={this.deselectImage} />
+                <div className="row">
+                  {selected ?
+                    <div className='col-md-12 box'>
+                      <div className='col-md-2'>
+                        <img alt={this.props.text} className="img-responsive img" src={this.state.selectedURL} onClick={this.deselectImage}></img>
+                        <p style={backColor}>{quality}</p>
+                      </div>
+                      <div className='col-md-5'>
+                        <h4>Score Received</h4>
+                        <p>Positive {positive}</p>
+                        <p>Negative {negative}</p>
+                          <div id='loader'>
+                            <BarLoader
+                                color={'#337ab7'}
+                                loading={this.state.sendingImage}
+                              />
+                          </div>
+                      </div>
+                      <div className='col-md-5'>
+                        <h4>Reclassify the image</h4>
+                          <form>
+                          <div className="radio">
+                            <label>
+                              <input type="radio" value="Positive" checked={this.state.selectedOption === 'Positive'}  onChange={this.radioButton}/>
+                              Positive
+                            </label>
+                          </div>
+                          <div className="radio">
+                            <label>
+                              <input type="radio" value="Negative" checked={this.state.selectedOption === 'Negative'}  onChange={this.radioButton}/>
+                              Negative
+                            </label>
+                          </div>
+                        </form>
+                        <button onClick={this.addImageToModel} type="button" className="btn-primary pull-right"> Send</button>
+                      </div>
+                    </div>
+                    :<div></div>}
+                </div>
+                <div className="row">
+                  {isFull ? (this.state.predictions.map((pre, index) =>{
+                    if(pre != null){
+                      if(pre.score != null){
+                        if(pre.url === this.state.selectedURL){
+                          return <Image key={index} prediction={pre} select={this.selectImage} selectedBool={true} deselect={this.deselectImage} />
+                        } else{
+                          return <Image key={index} prediction={pre} select={this.selectImage} selectedBool={false} deselect={this.deselectImage} />
+                        }
                       }
                     }
-                  }
-                }) )
-              : (<p></p>)}
-              <div id='loader'>
-                <BarLoader
-                    color={'#337ab7'}
-                    loading={this.state.loading}
-                  />
-              </div>
+                  }) )
+                : (<p></p>)}
+                  <div id='loader'>
+                    <BarLoader
+                        color={'#337ab7'}
+                        loading={this.state.loading}
+                      />
+                  </div>
+                </div>
               </div>
               <div className="col-md-2"></div>
             </div>

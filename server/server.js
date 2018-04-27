@@ -72,6 +72,22 @@ app.post('/predict', function(req, res, next) {
   });
 });
 
+app.post('/upload', function(req, res, next) {
+
+  //Get the image link
+  console.log("Upload to bucket");
+  var link = req.body.link;
+  var label = req.body.label;
+  var getDataPromise = getDataURLPromise(link);
+  getDataPromise.then(base64Body =>{
+    uploadToBucket(base64Body,label,(fileURL) => {
+      console.log(fileURL);
+      response = {"upload":fileURL};
+      res.json(response);
+    });
+  });
+});
+
 
 //This function was used to upload images to bucket.
 async function processArray(links) {
@@ -169,7 +185,9 @@ getDataURLPromise = function(url) {
       var body = ""
       resp.on('data', (data) => { body += data});
       resp.on('end', () => {
-          resolve(body);
+        var byteLength = parseInt((body).replace(/=/g,"").length * 0.75);
+        console.log(byteLength);
+        resolve(body);
       });
     }).on('error', (e) => {
         console.log(`Got error: ${e.message}`);
@@ -179,12 +197,12 @@ getDataURLPromise = function(url) {
 }
 
 //This function was used to upload images to bucket.
-uploadToBucket = function(data, callback){
+uploadToBucket = function(data,label, callback){
   var bufferStream = new stream.PassThrough();
   bufferStream.end(new Buffer(data, 'base64'));
 
   var date = Date.now()
-  var fileName = date+"_custom_search"
+  var fileName = label+"/"+date+".jpg";
   var file = bucket.file(fileName);
   bufferStream.pipe(file.createWriteStream({
     metadata: {

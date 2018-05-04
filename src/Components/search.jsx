@@ -242,7 +242,7 @@ class Search extends Component {
           }
         }).catch(error => {
           console.log(error);
-          alert('Error');
+          alert('There was an error while testing your image. Wait a few seconds and try again.');
         });
       });
     };

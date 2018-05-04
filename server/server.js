@@ -89,6 +89,26 @@ app.post('/upload', function(req, res, next) {
 });
 
 
+app.post('/predictCustom', function(req, res, next) {
+
+  //Get the image base64
+  var base64 = req.body.base64.split(',')[1];
+  var link = "No link";
+  //Generate AutoML Token
+  jwtClient.authorize(function (err, tokens) {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    var accessToken = tokens.access_token
+    var autoMLrequestPromise = asyncRequest(accessToken, link, base64)
+    autoMLrequestPromise.then(value =>{
+      response = {"predictions":value}
+      res.json(response);
+    });
+  });
+});
+
 //This function was used to upload images to bucket.
 async function processArray(links) {
   var bucketLinks = [];

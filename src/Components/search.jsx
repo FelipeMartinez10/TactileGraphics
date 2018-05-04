@@ -27,7 +27,13 @@ class Search extends Component {
         selectedURL: "",
         selectedBool: false,
         selectedPrediction: {},
-        selectedOption: ""
+        selectedOption: "",
+        testYourOwn: false,
+        data_uri: "",
+        filename: "",
+        filetype: "",
+        customPredictionMade: false,
+        customPrediction:{}
       }
       this.predictAutoML = this.predictAutoML.bind(this);
       this.compare = this.compare.bind(this);
@@ -36,6 +42,7 @@ class Search extends Component {
       this.radioButton = this.radioButton.bind(this);
       this.addImageToModel = this.addImageToModel.bind(this);
       this.uploadToBucket = this.uploadToBucket.bind(this);
+      this.imageUpload = this.imageUpload.bind(this);
     }
 
     selectImage(prediction){
@@ -64,7 +71,9 @@ class Search extends Component {
       console.log("Function called")
       this.setState({
         predictions:[],
-        loading: true
+        loading: true,
+        testYourOwn: false,
+        data_uri: ""
       });
     axios.get(URL+this.state.query+googleCustomSearchURL).then(response => {
       if(response.data.items) {
@@ -106,11 +115,11 @@ class Search extends Component {
       //Add response to all responses and sort again.
       var currentPredictions = this.state.predictions;
       currentPredictions.push(response.data.predictions);
-      var predictionsSorted = currentPredictions.filter(function(n){ return n != undefined });
+      var predictionsSorted = currentPredictions.filter(function(n){ return n !== undefined });
       if(predictionsSorted.length >0){
         predictionsSorted.sort(this.compare)
       } else{
-        if(this.state.predictionsMade == 10){
+        if(this.state.predictionsMade === 10){
           alert("There was an error processing your search. Wait a few seconds and try again.")
           this.setState({
             predictionsMade: 0
@@ -130,7 +139,7 @@ class Search extends Component {
       this.setState({
         predictionsMade: predictionsCount
       });
-      if(this.state.predictionsMade == 10){
+      if(this.state.predictionsMade === 10){
         alert("There was an error processing your search. Wait a few seconds and try again.")
         this.setState({
           predictionsMade: 0,
@@ -191,7 +200,7 @@ class Search extends Component {
     axios.post(serverURL+"/upload", body, config)
     .then(response => {
       console.log(response);
-      if(response.data.upload != ""){
+      if(response.data.upload !== ""){
         this.setState({
           sendingImage: false
         });
@@ -205,9 +214,51 @@ class Search extends Component {
       });
     });
   }
+  imageUpload(event)
+  {
+    const reader = new FileReader();
+    const file = event.target.files[0];
+    reader.onload = (upload) => {
+      this.setState({
+        data_uri: upload.target.result,
+        filename: file.name,
+        filetype: file.type
+      },()=>{
+        var config = {
+          headers: {'Content-type': 'application/json'}
+        };
+        var body = {
+          "base64": upload.target.result
+        }
+        axios.post(serverURL+"/predictCustom", body, config)
+        .then(response => {
+          //console.log(response.data)
+          if(response.data){
+            console.log(response.data)
+            this.setState({
+              customPredictionMade: true,
+              customPrediction: response.data.predictions
+            });
+          }
+        }).catch(error => {
+          console.log(error);
+          alert('Error');
+        });
+      });
+    };
+    if(file){
+      reader.readAsDataURL(file);
+    }
+  }
 
     render() {
-      const isFull = this.state.full
+      const isFull = this.state.full;
+      const upload = this.state.testYourOwn;
+      const customPredictionMade = this.state.customPredictionMade;
+      var imageUploaded = false;
+      if(this.state.data_uri !== ""){
+        imageUploaded = true;
+      }
       //console.log(this.state)
       var selected = this.state.selectedBool;
       if(selected){
@@ -235,6 +286,20 @@ class Search extends Component {
         negative = negative.toFixed(3);
         positive = positive.toFixed(3);
       }
+      if(customPredictionMade){
+        var backColorCustom = "";
+        var qualityCustom = "";
+        if(this.state.customPrediction.score >= 0.9 && this.state.customPrediction.label === "positive") {
+          backColorCustom = {backgroundColor: "#D5E8D4", color: "#4E4E4E"};
+          qualityCustom = "Good";
+        } else if(this.state.customPrediction.score >= 0.75 && this.state.customPrediction.label === "positive") {
+          backColorCustom = {backgroundColor: "#FFF2CC", color: "#4E4E4E"};
+          qualityCustom = "Fair";
+        } else {
+          backColorCustom = {backgroundColor: "#F8CECC", color: "#4E4E4E"};
+          qualityCustom = "Bad";
+        }
+      }
         return (
           <div className ="container">
             <div className = "row">
@@ -260,7 +325,12 @@ class Search extends Component {
                  </form>
                 </div>
               </div>
-              <div className = "col-md-3"></div>
+              <div className = "col-md-3">
+                <button onClick={() => this.setState({testYourOwn: true})} type="button" className="btn-primary">
+                  <span className="glyphicon glyphicon-upload" aria-hidden="true"> </span>
+                     Test your own image
+                 </button>
+              </div>
             </div>
             <div className="row">
               <hr className="divisor"></hr>
@@ -307,8 +377,8 @@ class Search extends Component {
                 </div>
                 <div className="row">
                   {isFull ? (this.state.predictions.map((pre, index) =>{
-                    if(pre != null){
-                      if(pre.score != null){
+                    if(pre !== null){
+                      if(pre.score !== null){
                         if(pre.url === this.state.selectedURL){
                           return <Image key={index} prediction={pre} select={this.selectImage} selectedBool={true} deselect={this.deselectImage} />
                         } else{
@@ -324,6 +394,55 @@ class Search extends Component {
                         loading={this.state.loading}
                       />
                   </div>
+                </div>
+                <div className="row margin-top">
+                  {upload ?
+                    <div>
+                      {imageUploaded ?
+                        <div className="uploader" >
+                          <label htmlFor="file-upload" id="file-drag">
+                            <div className="row">
+                              <span id="close-glyph" className="glyphicon glyphicon-remove pull-left" aria-hidden="true" onClick={() => {this.setState({testYourOwn: false, data_uri: "",customPredictionMade: false})}}></span>
+                            </div>
+                            <div className="row">
+                              <img id="file-image" src={this.state.data_uri} alt="Preview"></img>
+                            </div>
+                            {customPredictionMade ?
+                              <div className="row margin-top">
+                                <div className='col-md-3'></div>
+                                <div className='col-md-6'>
+                                  <p style={backColorCustom}>{qualityCustom}</p>
+                                </div>
+                                <div className='col-md-3'></div>
+                              </div>
+                               :
+                               <div className="row margin-top">
+                                 <div id='loader'>
+                                   <BarLoader
+                                       color={'#337ab7'}
+                                       loading={true}
+                                     />
+                                 </div>
+                               </div>
+                             }
+                            <div className="row margin-top">
+                              <button onClick={() => {this.setState({data_uri: "", customPredictionMade: false})}} type="button" className="btn-primary">Test another image</button>
+                            </div>
+                          </label>
+                        </div>
+                        :
+                        <form id="file-upload-form" className="uploader" onChange={this.imageUpload}>
+                          <input id="file-upload" type="file" name="fileUpload" accept="image/*" />
+                          <label htmlFor="file-upload" id="file-drag">
+                            <div id="start">
+                              <span id="file-upload-btn" className="btn btn-primary">Select an image</span>
+                              <span id="close-glyph" className="glyphicon glyphicon-remove pull-left" aria-hidden="true" onClick={() => {this.setState({testYourOwn: false, data_uri: "", customPredictionMade: false})}}></span>
+                            </div>
+                          </label>
+                        </form>
+                      }
+                    </div>
+                : <div></div>}
                 </div>
               </div>
               <div className="col-md-2"></div>

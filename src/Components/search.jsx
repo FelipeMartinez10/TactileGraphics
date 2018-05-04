@@ -116,6 +116,7 @@ class Search extends Component {
       var currentPredictions = this.state.predictions;
       currentPredictions.push(response.data.predictions);
       var predictionsSorted = currentPredictions.filter(function(n){ return n !== undefined });
+      predictionsSorted = predictionsSorted.filter(function(n){ return n.score !== undefined });
       if(predictionsSorted.length >0){
         predictionsSorted.sort(this.compare)
       } else{
@@ -232,13 +233,18 @@ class Search extends Component {
         }
         axios.post(serverURL+"/predictCustom", body, config)
         .then(response => {
-          //console.log(response.data)
-          if(response.data){
-            console.log(response.data)
+          console.log(response.data)
+          if(response.data.predictions.score){
             this.setState({
               customPredictionMade: true,
               customPrediction: response.data.predictions
             });
+          }else{
+            this.setState({
+              customPredictionMade: false,
+              data_uri: ""
+            });
+            alert('There was an error while testing your image. Wait a few seconds and try again.');
           }
         }).catch(error => {
           console.log(error);

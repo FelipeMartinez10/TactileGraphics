@@ -68,7 +68,7 @@ app.post('/predict', function(req, res, next) {
     autoMLRequest(accessToken, link, function(predictions){
       response = {"predictions":predictions}
       res.json(response);
-    })
+    });
   });
 });
 

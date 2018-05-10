@@ -105,7 +105,6 @@ class Search extends Component {
         loading:false
       });
     });
-    /*
     axios.get(URL+this.state.query+googleCustomSearchURL+"&start=11").then(response => {
       if(response.data.items) {
         var links =[]
@@ -118,7 +117,7 @@ class Search extends Component {
       else {
         console.log("Nothing Found")
       }
-    })*/
+    })
   }
 
   predictAutoML(link) {

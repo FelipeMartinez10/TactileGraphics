@@ -13,11 +13,20 @@ const https = require('https');
 const key = require('../private/key.json');
 //const key = process.env;
 
+const MongoClient = require('mongodb').MongoClient;
+const assert = require('assert');
+// Connection URL
+const url = 'mongodb://<user>:<password>@ds117590.mlab.com:17590/tactile-graphics';
+// Database Name
+const dbName = 'tactile-graphics';
+
 
 const Model1 = "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201802221336_base";
 const Model1_1= "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201803091738_base";
 const Model2 = "projects/ml-for-tactile-graphics/models/Tactile_graphics2/versions/Tactile_graphics2_201803091747_base";
 const Model2_2 = "projects/ml-for-tactile-graphics/models/Tactile_graphics2/versions/Tactile_graphics2_201804061022_base";
+const Model2_3 = "projects/ml-for-tactile-graphics/models/Tactile_graphics2/versions/Tactile_graphics2_201805101227_base";
+//const currentModel = Model2_2;
 const currentModel = Model2_2;
 
 const storage = require('@google-cloud/storage');
@@ -243,6 +252,40 @@ uploadToBucket = function(data,label, callback){
   });
 }
 
+
+//----------------Feedback--------------------
+
+app.post('/feedback',function(req,res,next)
+{
+  // Use connect method to connect to the server
+  MongoClient.connect(url, function(err, client) {
+    //assert.equal(null, err);
+    if(err !== null){
+      console.log(err)
+    } else{
+      console.log("Connected successfully to server");
+      const db = client.db(dbName);
+      insertDocuments(db, req.body.feedback, function() {
+        client.close();
+      });
+    }
+  });
+  res.send('OK');
+});
+
+insertDocuments = function(db, value, callback) {
+  // Get the documents collection
+  const collection = db.collection('feedback');
+  // Insert some documents
+  collection.insert({feedback : value}, function(err, result) {
+    if(err !== null){
+      console.log(err);
+    } else{
+      console.log("Inserted feedback into the collection");
+      callback(result);
+    }
+  });
+}
 
 
 

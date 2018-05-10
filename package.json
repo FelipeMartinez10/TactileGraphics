@@ -11,6 +11,7 @@
     "express": "^4.16.2",
     "filereader": "^0.10.3",
     "googleapis": "^27.0.0",
+    "mongodb": "^3.0.8",
     "morgan": "^1.9.0",
     "nodemon": "^1.17.1",
     "react": "^16.2.0",

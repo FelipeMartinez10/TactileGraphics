@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import '../App.css';
 import axios from 'axios';
 import Image from './image.jsx';
+import Feedback from './feedback.jsx';
 import frontVariables from '../privateKeys/frontVariables.js'
 import { BarLoader } from 'react-spinners';
 
@@ -33,7 +34,8 @@ class Search extends Component {
         filename: "",
         filetype: "",
         customPredictionMade: false,
-        customPrediction:{}
+        customPrediction:{},
+        sendFeedback: false
       }
       this.predictAutoML = this.predictAutoML.bind(this);
       this.compare = this.compare.bind(this);
@@ -43,6 +45,7 @@ class Search extends Component {
       this.addImageToModel = this.addImageToModel.bind(this);
       this.uploadToBucket = this.uploadToBucket.bind(this);
       this.imageUpload = this.imageUpload.bind(this);
+      this.closeFeedbackSection = this.closeFeedbackSection.bind(this);
     }
 
     selectImage(prediction){
@@ -66,14 +69,22 @@ class Search extends Component {
         selectedBool: false
       });
     }
-
+    closeFeedbackSection(){
+      this.setState({
+        sendFeedback: false
+      });
+    }
     getSearchResults() {
+      if(this.state.query === ""){
+        return;
+      }
       console.log("Function called")
       this.setState({
         predictions:[],
         loading: true,
         testYourOwn: false,
-        data_uri: ""
+        data_uri: "",
+        sendFeedback:false
       });
     axios.get(URL+this.state.query+googleCustomSearchURL).then(response => {
       if(response.data.items) {
@@ -94,6 +105,20 @@ class Search extends Component {
         loading:false
       });
     });
+    /*
+    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=11").then(response => {
+      if(response.data.items) {
+        var links =[]
+        for(var i = 0; i < response.data.items.length; i++) {
+          //Call one by one.
+          this.predictAutoML(response.data.items[i].image.thumbnailLink)
+          links.push(response.data.items[i].image.thumbnailLink)
+        }
+      }
+      else {
+        console.log("Nothing Found")
+      }
+    })*/
   }
 
   predictAutoML(link) {
@@ -119,20 +144,21 @@ class Search extends Component {
       predictionsSorted = predictionsSorted.filter(function(n){ return n.score !== undefined });
       if(predictionsSorted.length >0){
         predictionsSorted.sort(this.compare)
+        this.setState({
+          predictions: predictionsSorted,
+          full: true,
+          images:[],
+          loading: false
+        });
       } else{
         if(this.state.predictionsMade === 10){
           alert("There was an error processing your search. Wait a few seconds and try again.")
           this.setState({
-            predictionsMade: 0
+            predictionsMade: 0,
+            loading:false
           });
         }
       }
-      this.setState({
-        predictions: predictionsSorted,
-        full: true,
-        images:[],
-        loading: false
-      });
     }).catch((error)=>{
       console.log(error)
       var predictionsCount = this.state.predictionsMade;
@@ -258,6 +284,7 @@ class Search extends Component {
   }
 
     render() {
+      const sendFeedback = this.state.sendFeedback;
       const isFull = this.state.full;
       const upload = this.state.testYourOwn;
       const customPredictionMade = this.state.customPredictionMade;
@@ -332,7 +359,7 @@ class Search extends Component {
                 </div>
               </div>
               <div className = "col-md-3">
-                <button onClick={() => this.setState({testYourOwn: true})} type="button" className="btn-primary">
+                <button onClick={() => this.setState({testYourOwn: true, sendFeedback:false})} type="button" className="btn-primary">
                   <span className="glyphicon glyphicon-upload" aria-hidden="true"> </span>
                      Test your own image
                  </button>
@@ -342,119 +369,131 @@ class Search extends Component {
               <hr className="divisor"></hr>
               <div className="col-md-2"></div>
               <div className="col-md-8">
-                <div className="row">
-                  {selected ?
-                    <div className='col-md-12 box'>
-                      <div className='col-md-2'>
-                        <img alt={this.props.text} className="img-responsive img" src={this.state.selectedURL} onClick={this.deselectImage}></img>
-                        <p style={backColor}>{quality}</p>
-                      </div>
-                      <div className='col-md-5'>
-                        <h4>Score Received</h4>
-                        <p>Positive {positive}</p>
-                        <p>Negative {negative}</p>
-                          <div id='loader'>
-                            <BarLoader
-                                color={'#337ab7'}
-                                loading={this.state.sendingImage}
-                              />
+                {sendFeedback ?
+                  <Feedback close={this.closeFeedbackSection}></Feedback>
+                  :
+                  <div>
+                    <div className="row">
+                      {selected ?
+                        <div className='col-md-12 box'>
+                          <div className='col-md-2'>
+                            <img alt={this.props.text} className="img-responsive img" src={this.state.selectedURL} onClick={this.deselectImage}></img>
+                            <p style={backColor}>{quality}</p>
                           </div>
-                      </div>
-                      <div className='col-md-5'>
-                        <h4>Reclassify the image</h4>
-                          <form>
-                          <div className="radio">
-                            <label>
-                              <input type="radio" value="Positive" checked={this.state.selectedOption === 'Positive'}  onChange={this.radioButton}/>
-                              Positive
-                            </label>
-                          </div>
-                          <div className="radio">
-                            <label>
-                              <input type="radio" value="Negative" checked={this.state.selectedOption === 'Negative'}  onChange={this.radioButton}/>
-                              Negative
-                            </label>
-                          </div>
-                        </form>
-                        <button onClick={this.addImageToModel} type="button" className="btn-primary pull-right"> Send</button>
-                      </div>
-                    </div>
-                    :<div></div>}
-                </div>
-                <div className="row">
-                  {isFull ? (this.state.predictions.map((pre, index) =>{
-                    if(pre !== null){
-                      if(pre.score !== null){
-                        if(pre.url === this.state.selectedURL){
-                          return <Image key={index} prediction={pre} select={this.selectImage} selectedBool={true} deselect={this.deselectImage} />
-                        } else{
-                          return <Image key={index} prediction={pre} select={this.selectImage} selectedBool={false} deselect={this.deselectImage} />
-                        }
-                      }
-                    }
-                  }) )
-                : (<p></p>)}
-                  <div id='loader'>
-                    <BarLoader
-                        color={'#337ab7'}
-                        loading={this.state.loading}
-                      />
-                  </div>
-                </div>
-                <div className="row margin-top">
-                  {upload ?
-                    <div>
-                      {imageUploaded ?
-                        <div className="uploader" >
-                          <label htmlFor="file-upload" id="file-drag">
-                            <div className="row">
-                              <span id="close-glyph" className="glyphicon glyphicon-remove pull-left" aria-hidden="true" onClick={() => {this.setState({testYourOwn: false, data_uri: "",customPredictionMade: false})}}></span>
-                            </div>
-                            <div className="row">
-                              <img id="file-image" src={this.state.data_uri} alt="Preview"></img>
-                            </div>
-                            {customPredictionMade ?
-                              <div className="row margin-top">
-                                <div className='col-md-3'></div>
-                                <div className='col-md-6'>
-                                  <p style={backColorCustom}>{qualityCustom}</p>
-                                </div>
-                                <div className='col-md-3'></div>
+                          <div className='col-md-5'>
+                            <h4>Score Received</h4>
+                            <p>Positive {positive}</p>
+                            <p>Negative {negative}</p>
+                              <div id='loader'>
+                                <BarLoader
+                                    color={'#337ab7'}
+                                    loading={this.state.sendingImage}
+                                  />
                               </div>
-                               :
-                               <div className="row margin-top">
-                                 <div id='loader'>
-                                   <BarLoader
-                                       color={'#337ab7'}
-                                       loading={true}
-                                     />
-                                 </div>
-                               </div>
-                             }
-                            <div className="row margin-top">
-                              <button onClick={() => {this.setState({data_uri: "", customPredictionMade: false})}} type="button" className="btn-primary">Test another image</button>
-                            </div>
-                          </label>
+                          </div>
+                          <div className='col-md-5'>
+                            <h4>Reclassify the image</h4>
+                              <form>
+                              <div className="radio">
+                                <label>
+                                  <input type="radio" value="Positive" checked={this.state.selectedOption === 'Positive'}  onChange={this.radioButton}/>
+                                  Positive
+                                </label>
+                              </div>
+                              <div className="radio">
+                                <label>
+                                  <input type="radio" value="Negative" checked={this.state.selectedOption === 'Negative'}  onChange={this.radioButton}/>
+                                  Negative
+                                </label>
+                              </div>
+                            </form>
+                            <button onClick={this.addImageToModel} type="button" className="btn-primary pull-right"> Send</button>
+                          </div>
                         </div>
-                        :
-                        <form id="file-upload-form" className="uploader" onChange={this.imageUpload}>
-                          <input id="file-upload" type="file" name="fileUpload" accept="image/*" />
-                          <label htmlFor="file-upload" id="file-drag">
-                            <div id="start">
-                              <span id="file-upload-btn" className="btn btn-primary">Select an image</span>
-                              <span id="close-glyph" className="glyphicon glyphicon-remove pull-left" aria-hidden="true" onClick={() => {this.setState({testYourOwn: false, data_uri: "", customPredictionMade: false})}}></span>
-                            </div>
-                          </label>
-                        </form>
-                      }
+                        :<div></div>}
                     </div>
-                : <div></div>}
-                </div>
+                    <div className="row">
+                      {isFull ? (this.state.predictions.map((pre, index) =>{
+                        if(pre !== null && pre !== undefined){
+                          if(pre.score !== null){
+                            if(pre.url === this.state.selectedURL){
+                              return <Image key={index} prediction={pre} select={this.selectImage} selectedBool={true} deselect={this.deselectImage} />
+                            } else{
+                              return <Image key={index} prediction={pre} select={this.selectImage} selectedBool={false} deselect={this.deselectImage} />
+                            }
+                          }
+                        }
+                      }) )
+                    : (<p></p>)}
+                      <div id='loader'>
+                        <BarLoader
+                            color={'#337ab7'}
+                            loading={this.state.loading}
+                          />
+                      </div>
+                    </div>
+                    <div className="row margin-top">
+                      {upload ?
+                        <div>
+                          {imageUploaded ?
+                            <div className="uploader" >
+                              <label htmlFor="file-upload" id="file-drag">
+                                <div className="row">
+                                  <span id="close-glyph" className="glyphicon glyphicon-remove pull-left" aria-hidden="true" onClick={() => {this.setState({testYourOwn: false, data_uri: "",customPredictionMade: false})}}></span>
+                                </div>
+                                <div className="row">
+                                  <img id="file-image" src={this.state.data_uri} alt="Preview"></img>
+                                </div>
+                                {customPredictionMade ?
+                                  <div className="row margin-top">
+                                    <div className='col-md-3'></div>
+                                    <div className='col-md-6'>
+                                      <p style={backColorCustom}>{qualityCustom}</p>
+                                    </div>
+                                    <div className='col-md-3'></div>
+                                  </div>
+                                   :
+                                   <div className="row margin-top">
+                                     <div id='loader'>
+                                       <BarLoader
+                                           color={'#337ab7'}
+                                           loading={true}
+                                         />
+                                     </div>
+                                   </div>
+                                 }
+                                <div className="row margin-top">
+                                  <button onClick={() => {this.setState({data_uri: "", customPredictionMade: false})}} type="button" className="btn-primary">Test another image</button>
+                                </div>
+                              </label>
+                            </div>
+                            :
+                            <form id="file-upload-form" className="uploader" onChange={this.imageUpload}>
+                              <input id="file-upload" type="file" name="fileUpload" accept="image/*" />
+                              <label htmlFor="file-upload" id="file-drag">
+                                <div id="start">
+                                  <span id="file-upload-btn" className="btn btn-primary">Select an image</span>
+                                  <span id="close-glyph" className="glyphicon glyphicon-remove pull-left" aria-hidden="true" onClick={() => {this.setState({testYourOwn: false, data_uri: "", customPredictionMade: false})}}></span>
+                                </div>
+                              </label>
+                            </form>
+                          }
+                        </div>
+                    : <div></div>}
+                    </div>
+                    <div className= "row margin-top">
+                      <div className="navbar navbar-fixed-bottom">
+                        <button onClick={() => {this.setState({sendFeedback:true});}} type="button" className="btn-primary">
+                          Send Feedback
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                }
               </div>
               <div className="col-md-2"></div>
             </div>
           </div>
-
         );
     }
 }

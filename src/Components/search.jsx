@@ -358,7 +358,7 @@ class Search extends Component {
                 </div>
               </div>
               <div className = "col-md-3">
-                <button onClick={() => this.setState({testYourOwn: true, sendFeedback:false})} type="button" className="btn-primary">
+                <button onClick={() => this.setState({testYourOwn: true, sendFeedback:false, isFull: false})} type="button" className="btn-primary">
                   <span className="glyphicon glyphicon-upload" aria-hidden="true"> </span>
                      Test your own image
                  </button>

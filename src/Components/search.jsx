@@ -358,7 +358,7 @@ class Search extends Component {
                 </div>
               </div>
               <div className = "col-md-3">
-                <button onClick={() => this.setState({testYourOwn: true, sendFeedback:false, isFull: false})} type="button" className="btn-primary">
+                <button onClick={() => this.setState({testYourOwn: true, sendFeedback:false, full: false})} type="button" className="btn-primary">
                   <span className="glyphicon glyphicon-upload" aria-hidden="true"> </span>
                      Test your own image
                  </button>
@@ -438,7 +438,7 @@ class Search extends Component {
                             <div className="uploader" >
                               <label htmlFor="file-upload" id="file-drag">
                                 <div className="row">
-                                  <span id="close-glyph" className="glyphicon glyphicon-remove pull-left" aria-hidden="true" onClick={() => {this.setState({testYourOwn: false, data_uri: "",customPredictionMade: false})}}></span>
+                                  <span id="close-glyph" className="glyphicon glyphicon-remove pull-left" aria-hidden="true" onClick={() => {this.setState({testYourOwn: false, data_uri: "",customPredictionMade: false, full:true})}}></span>
                                 </div>
                                 <div className="row">
                                   <img id="file-image" src={this.state.data_uri} alt="Preview"></img>
@@ -472,7 +472,7 @@ class Search extends Component {
                               <label htmlFor="file-upload" id="file-drag">
                                 <div id="start">
                                   <span id="file-upload-btn" className="btn btn-primary">Select an image</span>
-                                  <span id="close-glyph" className="glyphicon glyphicon-remove pull-left" aria-hidden="true" onClick={() => {this.setState({testYourOwn: false, data_uri: "", customPredictionMade: false})}}></span>
+                                  <span id="close-glyph" className="glyphicon glyphicon-remove pull-left" aria-hidden="true" onClick={() => {this.setState({testYourOwn: false, data_uri: "", customPredictionMade: false, full:true})}}></span>
                                 </div>
                               </label>
                             </form>

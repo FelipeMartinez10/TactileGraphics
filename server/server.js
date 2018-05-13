@@ -25,9 +25,11 @@ const Model1 = "projects/ml-for-tactile-graphics/models/Tactile_graphics/version
 const Model1_1= "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201803091738_base";
 const Model2 = "projects/ml-for-tactile-graphics/models/Tactile_graphics2/versions/Tactile_graphics2_201803091747_base";
 const Model2_2 = "projects/ml-for-tactile-graphics/models/Tactile_graphics2/versions/Tactile_graphics2_201804061022_base";
-const Model2_3 = "projects/ml-for-tactile-graphics/models/Tactile_graphics2/versions/Tactile_graphics2_201805101227_base";
+const Model2_2_1 = "projects/ml-for-tactile-graphics/models/Tactile_graphics2/versions/Tactile_graphics2_201805101227_base";
+const Model2_2_2 = "projects/ml-for-tactile-graphics/models/Tactile_graphics2/versions/Tactile_graphics2_201805111257_base";
+const Model2_3 = "projects/ml-for-tactile-graphics/models/Tactile_graphics2/versions/Tactile_graphics2_Version_2_3";
 //const currentModel = Model2_2;
-const currentModel = Model2_2;
+const currentModel = Model2_3;
 
 const storage = require('@google-cloud/storage');
 const fs = require('fs')
@@ -79,6 +81,16 @@ app.post('/predict', function(req, res, next) {
       res.json(response);
     });
   });
+  
+  /*
+  var results = {
+    "url": link,
+    "score": 0.9,
+    "label": "Negative"
+  }
+  var response = {"predictions":results}
+  res.json(response);*/
+
 });
 
 app.post('/upload', function(req, res, next) {

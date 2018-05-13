@@ -9,7 +9,8 @@ import { BarLoader } from 'react-spinners';
 
 //const googleCustomSearchURL = "%20clipart&imgColorType=gray&imgType=clipart&searchType=image&imgDominantColor=black&fileType=jpg"
 const googleCustomSearchURL = "%20simple%20clipart&imgColorType=gray&searchType=image&imgDominantColor=gray&imgDominantColor=black"
-const URL = "https://www.googleapis.com/customsearch/v1?key="+frontVariables.key+"&cx=004485904051950933441:5x_3_wemizq&q="
+//const URL = "https://www.googleapis.com/customsearch/v1?key="+frontVariables.key+"&cx=004485904051950933441:5x_3_wemizq&q="
+const URL = "https://www.googleapis.com/customsearch/v1?key="+frontVariables.key+"&cx=004485904051950933441:vo-2_mjws-q&q="
 //const URL = "https://www.googleapis.com/customsearch/v1?key="+process.env.REACT_APP_CUSTOM_SEARCH+"&cx=004485904051950933441:5x_3_wemizq&q="
 const serverURL = "http://localhost:3333"
 
@@ -35,7 +36,8 @@ class Search extends Component {
         filetype: "",
         customPredictionMade: false,
         customPrediction:{},
-        sendFeedback: false
+        sendFeedback: false,
+        base64ToDownload:""
       }
       this.predictAutoML = this.predictAutoML.bind(this);
       this.compare = this.compare.bind(this);
@@ -46,6 +48,7 @@ class Search extends Component {
       this.uploadToBucket = this.uploadToBucket.bind(this);
       this.imageUpload = this.imageUpload.bind(this);
       this.closeFeedbackSection = this.closeFeedbackSection.bind(this);
+      this.toDataURL = this.toDataURL.bind(this);
     }
 
     selectImage(prediction){
@@ -60,6 +63,25 @@ class Search extends Component {
           selectedOption: ""
         });
       }
+    }
+
+    toDataURL(url) {
+      console.log("Trying to download image");
+      var mainThis = this;
+      var xhr = new XMLHttpRequest();
+      xhr.onload = function() {
+        var reader = new FileReader();
+        reader.onloadend = function() {
+          //callback(reader.result);
+          mainThis.setState({
+            base64ToDownload: reader.result
+          });
+        }
+        reader.readAsDataURL(xhr.response);
+      };
+      xhr.open('GET', url);
+      xhr.responseType = 'blob';
+      xhr.send();
     }
 
     deselectImage(){
@@ -91,8 +113,9 @@ class Search extends Component {
         var links =[]
         for(var i = 0; i < response.data.items.length; i++) {
           //Call one by one.
-          this.predictAutoML(response.data.items[i].image.thumbnailLink)
-          links.push(response.data.items[i].image.thumbnailLink)
+          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
+          links.push(response.data.items[i].image.thumbnailLink);
+          //break;
         }
       }
       else {
@@ -105,22 +128,145 @@ class Search extends Component {
         loading:false
       });
     });
+
+    //return;
+
     axios.get(URL+this.state.query+googleCustomSearchURL+"&start=11").then(response => {
       if(response.data.items) {
         var links =[]
         for(var i = 0; i < response.data.items.length; i++) {
           //Call one by one.
-          this.predictAutoML(response.data.items[i].image.thumbnailLink)
-          links.push(response.data.items[i].image.thumbnailLink)
+          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
+          links.push(response.data.items[i].image.thumbnailLink);
         }
       }
       else {
         console.log("Nothing Found")
       }
     })
+
+
+// Delete this---------------------------------------------------------------
+/*
+    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=21").then(response => {
+      if(response.data.items) {
+        var links =[]
+        for(var i = 0; i < response.data.items.length; i++) {
+          //Call one by one.
+          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
+          links.push(response.data.items[i].image.thumbnailLink);
+        }
+      }
+      else {
+        console.log("Nothing Found")
+      }
+    })
+
+
+    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=31").then(response => {
+      if(response.data.items) {
+        var links =[]
+        for(var i = 0; i < response.data.items.length; i++) {
+          //Call one by one.
+          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
+          links.push(response.data.items[i].image.thumbnailLink);
+        }
+      }
+      else {
+        console.log("Nothing Found")
+      }
+    })
+
+
+    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=41").then(response => {
+      if(response.data.items) {
+        var links =[]
+        for(var i = 0; i < response.data.items.length; i++) {
+          //Call one by one.
+          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
+          links.push(response.data.items[i].image.thumbnailLink);
+        }
+      }
+      else {
+        console.log("Nothing Found")
+      }
+    })
+
+
+    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=51").then(response => {
+      if(response.data.items) {
+        var links =[]
+        for(var i = 0; i < response.data.items.length; i++) {
+          //Call one by one.
+          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
+          links.push(response.data.items[i].image.thumbnailLink);
+        }
+      }
+      else {
+        console.log("Nothing Found")
+      }
+    })
+
+    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=61").then(response => {
+      if(response.data.items) {
+        var links =[]
+        for(var i = 0; i < response.data.items.length; i++) {
+          //Call one by one.
+          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
+          links.push(response.data.items[i].image.thumbnailLink);
+        }
+      }
+      else {
+        console.log("Nothing Found")
+      }
+    })
+
+    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=71").then(response => {
+      if(response.data.items) {
+        var links =[]
+        for(var i = 0; i < response.data.items.length; i++) {
+          //Call one by one.
+          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
+          links.push(response.data.items[i].image.thumbnailLink);
+        }
+      }
+      else {
+        console.log("Nothing Found")
+      }
+    })
+
+    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=81").then(response => {
+      if(response.data.items) {
+        var links =[]
+        for(var i = 0; i < response.data.items.length; i++) {
+          //Call one by one.
+          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
+          links.push(response.data.items[i].image.thumbnailLink);
+        }
+      }
+      else {
+        console.log("Nothing Found")
+      }
+    })
+
+    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=91").then(response => {
+      if(response.data.items) {
+        var links =[]
+        for(var i = 0; i < response.data.items.length; i++) {
+          //Call one by one.
+          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
+          links.push(response.data.items[i].image.thumbnailLink);
+        }
+      }
+      else {
+        console.log("Nothing Found")
+      }
+    })
+    */
+
   }
 
-  predictAutoML(link) {
+  predictAutoML(link, sourceLink) {
     var config = {
       headers: {'Content-type': 'application/json'}
     };
@@ -131,6 +277,8 @@ class Search extends Component {
     axios.post(serverURL+"/predict", body, config)
     .then(response => {
       console.log(response);
+      var extendedResponse = response.data.predictions;
+      extendedResponse.sourceLink = sourceLink;
       var predictionsCount = this.state.predictionsMade;
       predictionsCount ++;
       this.setState({
@@ -138,7 +286,7 @@ class Search extends Component {
       });
       //Add response to all responses and sort again.
       var currentPredictions = this.state.predictions;
-      currentPredictions.push(response.data.predictions);
+      currentPredictions.push(extendedResponse);
       var predictionsSorted = currentPredictions.filter(function(n){ return n !== undefined });
       predictionsSorted = predictionsSorted.filter(function(n){ return n.score !== undefined });
       if(predictionsSorted.length >0){
@@ -375,38 +523,44 @@ class Search extends Component {
                     <div className="row">
                       {selected ?
                         <div className='col-md-12 box'>
-                          <div className='col-md-2'>
-                            <img alt={this.props.text} className="img-responsive img" src={this.state.selectedURL} onClick={this.deselectImage}></img>
-                            <p style={backColor}>{quality}</p>
-                          </div>
-                          <div className='col-md-5'>
-                            <h4>Score Received</h4>
-                            <p>Positive {positive}</p>
-                            <p>Negative {negative}</p>
-                              <div id='loader'>
-                                <BarLoader
-                                    color={'#337ab7'}
-                                    loading={this.state.sendingImage}
-                                  />
-                              </div>
-                          </div>
-                          <div className='col-md-5'>
-                            <h4>Reclassify the image</h4>
-                              <form>
-                              <div className="radio">
-                                <label>
-                                  <input type="radio" value="Positive" checked={this.state.selectedOption === 'Positive'}  onChange={this.radioButton}/>
-                                  Positive
-                                </label>
-                              </div>
-                              <div className="radio">
-                                <label>
-                                  <input type="radio" value="Negative" checked={this.state.selectedOption === 'Negative'}  onChange={this.radioButton}/>
-                                  Negative
-                                </label>
-                              </div>
-                            </form>
-                            <button onClick={this.addImageToModel} type="button" className="btn-primary pull-right"> Send</button>
+                          <div className='row'>
+                            <div className='col-md-2'>
+                              <img alt={this.props.text} className="img-responsive img" src={this.state.selectedURL} onClick={this.deselectImage}></img>
+                              <p style={backColor}>{quality}</p>
+                            </div>
+                            <div className='col-md-3'>
+                              <h4>Download</h4>
+                              <a href={this.state.selectedPrediction.sourceLink} className="btn btn-primary" target="_blank">Source</a>
+                            </div>
+                            <div className='col-md-3'>
+                              <h4>Score Received</h4>
+                              <p>Positive {positive}</p>
+                              <p>Negative {negative}</p>
+                                <div id='loader'>
+                                  <BarLoader
+                                      color={'#337ab7'}
+                                      loading={this.state.sendingImage}
+                                    />
+                                </div>
+                            </div>
+                            <div className='col-md-4'>
+                              <h4>Reclassify the image</h4>
+                                <form>
+                                <div className="radio">
+                                  <label>
+                                    <input type="radio" value="Positive" checked={this.state.selectedOption === 'Positive'}  onChange={this.radioButton}/>
+                                    Positive
+                                  </label>
+                                </div>
+                                <div className="radio">
+                                  <label>
+                                    <input type="radio" value="Negative" checked={this.state.selectedOption === 'Negative'}  onChange={this.radioButton}/>
+                                    Negative
+                                  </label>
+                                </div>
+                              </form>
+                              <button onClick={this.addImageToModel} type="button" className="btn btn-primary pull-right"> Send</button>
+                            </div>
                           </div>
                         </div>
                         :<div></div>}

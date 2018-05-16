@@ -194,7 +194,7 @@ class Search extends Component {
           //Call one by one.
           this.predictAutoMLSocket(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
           links.push(response.data.items[i].image.thumbnailLink);
-          //break;
+          break;
         }
       }
       else {
@@ -208,7 +208,7 @@ class Search extends Component {
       });
     });
 
-    //return;
+    return;
     setTimeout(() => {
       axios.get(URL+this.state.query+googleCustomSearchURL+"&start=11").then(response => {
       if(response.data.items) {
@@ -551,8 +551,7 @@ class Search extends Component {
                     <div className="row">
                       {isFull ? (this.state.predictions.map((pre, index) =>{
                         if(pre !== null && pre !== undefined){
-                          if(pre.score !== null){
-                            console.log(pre.score);
+                          if(pre.score !== null && pre.score !== undefined){
                             if(pre.url === this.state.selectedURL){
                               return <Image key={index} prediction={pre} select={this.selectImage} selectedBool={true} deselect={this.deselectImage} />
                             } else{

@@ -403,7 +403,31 @@ io.on('connection', socket => {
   socket.on('predict', (body) => {
     var link = body.link;
     var sourceLink = body.sourceLink;
-
+    if(!hashMapLoaded){
+      console.log('Loading hashmap on predict');
+      MongoClient.connect(url, function(err, client) {
+        //assert.equal(null, err);
+        if(err !== null){
+          console.log(err)
+        } else{
+          console.log("Connected successfully to server");
+          const db = client.db(dbName);
+          findHashMap(db, function(docs) {
+            if(docs[0] != undefined){
+              if(docs[0].hashMap != undefined && docs[0].hashMap != null){
+                map = docs[0].hashMap;
+                console.log("----------------------------------------------");
+                console.log("------------------HASHMAP---------------------");
+                console.log("----------------------------------------------");
+                console.log(map);
+                hashMapLoaded = true;
+              }
+            }
+            client.close();
+          });
+        }
+      });
+    }
     if(map[sourceLink] != null){
       //Query is in the hashmap
       var value = map[sourceLink];
@@ -447,6 +471,7 @@ io.on('connection', socket => {
 
   socket.on('wakeUp', () => {
     if(!hashMapLoaded){
+      console.log('Loading map in wakeUp');
       //Load hashMap
       MongoClient.connect(url, function(err, client) {
         //assert.equal(null, err);
@@ -487,7 +512,7 @@ io.on('connection', socket => {
         const db = client.db(dbName);
         findHashMap(db, function(docs) {
           if(docs[0] != undefined){
-            if(docs[0].hashMap != undefined && docs[0].hashMap != null){
+            if(docs[0].hashMap != undefined && docs[0].hashMap != null && map.length != undefined ){
               //There is hashmap in database, should update.
               console.log('Should update');
               removeHashMap(db,function(result){

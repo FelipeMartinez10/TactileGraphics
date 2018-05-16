@@ -434,7 +434,7 @@ io.on('connection', socket => {
       var extendedValue = Object.assign({}, value);
       extendedValue.url = link;
       var response = {"predictions": extendedValue}
-      io.sockets.emit('response', response);
+      socket.emit('response', response);
 
     } else{
       //Query is not in the hashmap
@@ -450,7 +450,7 @@ io.on('connection', socket => {
             predictions.sourceLink = sourceLink;
           }
           var response = {"predictions":predictions}
-          io.sockets.emit('response', response);
+          socket.emit('response', response);
           console.log("Response sent");
           if(predictions != null && predictions != undefined){
             if(predictions.score != null && predictions.score != undefined){

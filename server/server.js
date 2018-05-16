@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+
 const cors = require('cors');
 const google = require('googleapis');
 const request = require('request');
@@ -20,6 +21,13 @@ const url = 'mongodb://<user>:<password>@ds117590.mlab.com:17590/tactile-graphic
 // Database Name
 const dbName = 'tactile-graphics';
 
+const spawn = require('threads').spawn;
+
+//Socket config
+const socketIO = require('socket.io')
+const server = http.createServer(app)
+const io = socketIO(server)
+
 
 const Model1 = "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201802221336_base";
 const Model1_1= "projects/ml-for-tactile-graphics/models/Tactile_graphics/versions/Tactile_graphics_201803091738_base";
@@ -36,8 +44,10 @@ const fs = require('fs')
 
 const stream = require('stream');
 
-
-
+//Hashmap
+var map = {};
+//Boolean hashmap already loaded?
+var hashMapLoaded = false;
 app.use(cors());
 
 
@@ -75,13 +85,13 @@ app.post('/predict', function(req, res, next) {
       console.log(err);
       return;
     }
-    var accessToken = tokens.access_token
+    var accessToken = tokens.access_token;
     autoMLRequest(accessToken, link, function(predictions){
       response = {"predictions":predictions}
       res.json(response);
     });
   });
-  
+
   /*
   var results = {
     "url": link,
@@ -285,6 +295,8 @@ app.post('/feedback',function(req,res,next)
   res.send('OK');
 });
 
+// ------------------- MongoDB Functions --------------------------
+
 insertDocuments = function(db, value, callback) {
   // Get the documents collection
   const collection = db.collection('feedback');
@@ -299,8 +311,212 @@ insertDocuments = function(db, value, callback) {
   });
 }
 
+insertHashMap = function(db, value, callback) {
+  // Get the documents collection
+  const collection = db.collection('hashMap');
+  // Insert some documents
+  collection.insert({hashMap : value}, function(err, result) {
+    if(err !== null){
+      console.log(err);
+    } else{
+      console.log("Inserted feedback into the collection");
+      callback(result);
+    }
+  });
+}
+findHashMap = function(db, callback) {
+  // Get the documents collection
+  const collection = db.collection('hashMap');
+  // Find some documents
+  collection.find({}).toArray(function(err, docs) {
+    if(err !== null){
+      console.log(err);
+    }
+    console.log("Found map");
+    callback(docs);
+  });
+}
+
+updateMap = function(db, callback) {
+  // Get the documents collection
+  const collection = db.collection('hashMap');
+  // Update document where a is 2, set b equal to 1
+  collection.updateOne({ a : 2 }
+    , { $set: { b : 1 } }, function(err, result) {
+    if(err !== null){
+      console.log(err);
+    }
+    //console.log(result);
+    //assert.equal(1, result.result.n);
+    console.log("Updated the document");
+    callback(result);
+  });
+}
+
+removeHashMap = function(db, callback) {
+  // Get the documents collection
+  const collection = db.collection('hashMap');
+  // Delete document where a is 3
+  collection.remove({}, function(err, result) {
+    if(err !== null){
+      console.log(err);
+    }
+    //assert.equal(1, result.result.n);
+    console.log("Removed the document");
+    callback(result);
+  });
+}
 
 
-const server = app.listen(3333);
-console.log('Listening on localhost:3333');
-server.timeout = 300000;
+//--------------TEST----------------
+
+app.post('/testTime', function(req, res, next) {
+
+  var link = req.body.link;
+  console.log("test time");
+/*  var getDataPromise = getDataURLPromise(link);
+  getDataPromise.then(base64Body =>{
+    console.log("Done");
+    res.json("Done");
+  });*/
+  const thread = spawn(function ([a, b]) {
+    // Remember that this function will be run in another execution context.
+    return new Promise(resolve => {
+      console.log("Called");
+      var random = Math.floor(Math.random() * (10000 - 1000 + 1)) + 1000
+      setTimeout(() => resolve(a + b), random)
+    })
+  });
+  thread
+  .send([ 9, 12 ])
+  // The handlers come here: (none of them is mandatory)
+  .on('message', function(response) {
+    console.log('9 + 12 = ', response);
+    res.json("Done");
+    thread.kill();
+  });
+});
+
+io.on('connection', socket => {
+  console.log('New client connected')
+
+  socket.on('predict', (body) => {
+    var link = body.link;
+    var sourceLink = body.sourceLink;
+
+    if(map[sourceLink] != null){
+      //Query is in the hashmap
+      var value = map[sourceLink];
+      var extendedValue = Object.assign({}, value);
+      extendedValue.url = link;
+      var response = {"predictions": extendedValue}
+      io.sockets.emit('response', response);
+
+    } else{
+      //Query is not in the hashmap
+      //Generate AutoML Token
+      jwtClient.authorize(function (err, tokens) {
+        if (err) {
+          console.log(err);
+          return;
+        }
+        var accessToken = tokens.access_token;
+        autoMLRequest(accessToken, link, function(predictions){
+          if(predictions != null && predictions != undefined){
+            predictions.sourceLink = sourceLink;
+          }
+          var response = {"predictions":predictions}
+          io.sockets.emit('response', response);
+          console.log("Response sent");
+          if(predictions != null && predictions != undefined){
+            if(predictions.score != null && predictions.score != undefined){
+              //Add response to Hashmap
+              var value = {
+                score: predictions.score,
+                label: predictions.label,
+                sourceLink: sourceLink
+              };
+              map[sourceLink] = value;
+              map['length'] = 1;
+            }
+          }
+        });
+      });
+    }
+  });
+
+  socket.on('wakeUp', () => {
+    if(!hashMapLoaded){
+      //Load hashMap
+      MongoClient.connect(url, function(err, client) {
+        //assert.equal(null, err);
+        if(err !== null){
+          console.log(err)
+        } else{
+          console.log("Connected successfully to server");
+          const db = client.db(dbName);
+          findHashMap(db, function(docs) {
+            if(docs[0] != undefined){
+              if(docs[0].hashMap != undefined && docs[0].hashMap != null){
+                map = docs[0].hashMap;
+                console.log("----------------------------------------------");
+                console.log("------------------HASHMAP---------------------");
+                console.log("----------------------------------------------");
+                console.log(map);
+                hashMapLoaded = true;
+              }
+            }
+            client.close();
+          });
+        }
+      });
+
+    }
+  });
+
+  // disconnect is fired when a client leaves the server
+  socket.on('disconnect', () => {
+    console.log('user disconnected')
+    //Save hashMap to Database
+    MongoClient.connect(url, function(err, client) {
+      //assert.equal(null, err);
+      if(err !== null){
+        console.log(err)
+      } else{
+        console.log("Connected successfully to server");
+        const db = client.db(dbName);
+        findHashMap(db, function(docs) {
+          if(docs[0] != undefined){
+            if(docs[0].hashMap != undefined && docs[0].hashMap != null){
+              //There is hashmap in database, should update.
+              console.log('Should update');
+              removeHashMap(db,function(result){
+                //console.log(result);
+                insertHashMap(db, map, function() {
+                  client.close();
+                });
+              });
+            }
+          } else if(map.length != undefined ){
+            //There is not hash in db should create
+            console.log('Should create');
+            insertHashMap(db, map, function() {
+              client.close();
+            });
+          } else{
+            console.log('Dont do anything');
+            console.log(map);
+            client.close();
+          }
+        });
+      }
+    });
+  });
+})
+
+
+server.listen(3333, () => console.log('Listening on localhost:3333'))
+
+//const server = app.listen(3333);
+//console.log('Listening on localhost:3333');
+//server.timeout = 300000;

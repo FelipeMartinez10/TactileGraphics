@@ -4,7 +4,11 @@ import axios from 'axios';
 import Image from './image.jsx';
 import Feedback from './feedback.jsx';
 import frontVariables from '../privateKeys/frontVariables.js'
-import { BarLoader } from 'react-spinners';
+import { BarLoader, SyncLoader } from 'react-spinners';
+
+//Socket config
+import socketIOClient from 'socket.io-client'
+
 
 
 //const googleCustomSearchURL = "%20clipart&imgColorType=gray&imgType=clipart&searchType=image&imgDominantColor=black&fileType=jpg"
@@ -13,6 +17,7 @@ const googleCustomSearchURL = "%20simple%20clipart&imgColorType=gray&searchType=
 const URL = "https://www.googleapis.com/customsearch/v1?key="+frontVariables.key+"&cx=004485904051950933441:vo-2_mjws-q&q="
 //const URL = "https://www.googleapis.com/customsearch/v1?key="+process.env.REACT_APP_CUSTOM_SEARCH+"&cx=004485904051950933441:5x_3_wemizq&q="
 const serverURL = "http://localhost:3333"
+const socket = socketIOClient(serverURL);
 
 class Search extends Component {
 
@@ -37,7 +42,8 @@ class Search extends Component {
         customPredictionMade: false,
         customPrediction:{},
         sendFeedback: false,
-        base64ToDownload:""
+        base64ToDownload:"",
+        connectedToServer: true
       }
       this.predictAutoML = this.predictAutoML.bind(this);
       this.compare = this.compare.bind(this);
@@ -49,6 +55,79 @@ class Search extends Component {
       this.imageUpload = this.imageUpload.bind(this);
       this.closeFeedbackSection = this.closeFeedbackSection.bind(this);
       this.toDataURL = this.toDataURL.bind(this);
+      this.testTime = this.testTime.bind(this);
+      this.predictAutoMLSocket = this.predictAutoMLSocket.bind(this);
+    }
+    componentDidMount(){
+      //var sourceLink ="fix";
+      var body = {
+        "link": "https://f-martinez11.github.io/personalpage/img/clip.png",
+        "sourceLink": "https://f-martinez11.github.io/personalpage/img/clip.png"
+      }
+      socket.emit('wakeUp');
+
+      var mainThis = this;
+      socket.on('connect_error', function() {
+        console.log('Failed to connect to server');
+        mainThis.setState({connectedToServer: false});
+      });
+      socket.on('connect', function () {
+        mainThis.setState({connectedToServer: true});
+      });
+      socket.on('response', function(response) {
+        console.log(response);
+        var extendedResponse = response.predictions;
+        //extendedResponse.sourceLink = sourceLink;
+        var predictionsCount = mainThis.state.predictionsMade;
+        predictionsCount ++;
+        mainThis.setState({
+          predictionsMade: predictionsCount
+        });
+        //Add response to all responses and sort again.
+        var currentPredictions = mainThis.state.predictions;
+        currentPredictions.push(extendedResponse);
+        var predictionsSorted = currentPredictions.filter(function(n){ return n !== undefined });
+        predictionsSorted = predictionsSorted.filter(function(n){ return n.score !== undefined });
+        if(predictionsSorted.length >0){
+          predictionsSorted.sort(mainThis.compare)
+          mainThis.setState({
+            predictions: predictionsSorted,
+            full: true,
+            images:[],
+            loading: false
+          });
+        } else{
+          if(mainThis.state.predictionsMade === 10){
+            alert("There was an error processing your search. Wait a few seconds and try again.")
+            mainThis.setState({
+              predictionsMade: 0,
+              loading:false
+            });
+          }
+        }
+      });
+    }
+
+    testTime(){
+      var links = ["https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJo9fjr9iANo0QuhEKtSUlAOie15cwbfV--5lEHZhH9DUpyDqPQRi2A3Y",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRoGkPcCWoGeDwPRVlN3j7cf6ehjLfU1H0hAtldxb2LJ0u4u4ZPWENBq8s",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSyk1srttufk4Laxf9axjy-EEXIo2FyKBxGpfGqFIAEDlhwjP0rCb5SDjgL",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0bf0LR6kjmsYkiV0SgKoS-IVs-XAyr7gtHE0gcrHVvNoe6VpfWATVQG-vZw",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSzqcUJPqV0zjlR7iOllNTy3yxoM-kLH6RhHeBf0xZScnm2r0tqjj1ZsyQ",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRiYVPiE8uUadHv-K6_6pvl5mOt2Y_Mvx-6z3qZQ2gRWpz-s8t0Swg6KB0",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR1bY-3tF6er6yotAGMzirENg-dmUyh0nR0OpjH37poDPRgJA4mHukpq0c",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJo9fjr9iANo0QuhEKtSUlAOie15cwbfV--5lEHZhH9DUpyDqPQRi2A3Y",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRoGkPcCWoGeDwPRVlN3j7cf6ehjLfU1H0hAtldxb2LJ0u4u4ZPWENBq8s",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSyk1srttufk4Laxf9axjy-EEXIo2FyKBxGpfGqFIAEDlhwjP0rCb5SDjgL",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0bf0LR6kjmsYkiV0SgKoS-IVs-XAyr7gtHE0gcrHVvNoe6VpfWATVQG-vZw",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSzqcUJPqV0zjlR7iOllNTy3yxoM-kLH6RhHeBf0xZScnm2r0tqjj1ZsyQ",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRiYVPiE8uUadHv-K6_6pvl5mOt2Y_Mvx-6z3qZQ2gRWpz-s8t0Swg6KB0",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR1bY-3tF6er6yotAGMzirENg-dmUyh0nR0OpjH37poDPRgJA4mHukpq0c"];
+
+          for(var i = 0; i < links.length; i++){
+            this.predictAutoMLSocket(links[i],links[i]);
+            //break;
+          }
     }
 
     selectImage(prediction){
@@ -108,12 +187,12 @@ class Search extends Component {
         data_uri: "",
         sendFeedback:false
       });
-    axios.get(URL+this.state.query+googleCustomSearchURL).then(response => {
+      axios.get(URL+this.state.query+googleCustomSearchURL).then(response => {
       if(response.data.items) {
         var links =[]
         for(var i = 0; i < response.data.items.length; i++) {
           //Call one by one.
-          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
+          this.predictAutoMLSocket(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
           links.push(response.data.items[i].image.thumbnailLink);
           //break;
         }
@@ -130,140 +209,32 @@ class Search extends Component {
     });
 
     //return;
-
-    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=11").then(response => {
+    setTimeout(() => {
+      axios.get(URL+this.state.query+googleCustomSearchURL+"&start=11").then(response => {
       if(response.data.items) {
         var links =[]
         for(var i = 0; i < response.data.items.length; i++) {
           //Call one by one.
-          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
+          this.predictAutoMLSocket(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
           links.push(response.data.items[i].image.thumbnailLink);
         }
       }
       else {
         console.log("Nothing Found")
-      }
-    })
-
-
-// Delete this---------------------------------------------------------------
-/*
-    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=21").then(response => {
-      if(response.data.items) {
-        var links =[]
-        for(var i = 0; i < response.data.items.length; i++) {
-          //Call one by one.
-          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
-          links.push(response.data.items[i].image.thumbnailLink);
         }
-      }
-      else {
-        console.log("Nothing Found")
-      }
-    })
+      })
+    }, 500)
+
+  }
 
 
-    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=31").then(response => {
-      if(response.data.items) {
-        var links =[]
-        for(var i = 0; i < response.data.items.length; i++) {
-          //Call one by one.
-          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
-          links.push(response.data.items[i].image.thumbnailLink);
-        }
-      }
-      else {
-        console.log("Nothing Found")
-      }
-    })
-
-
-    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=41").then(response => {
-      if(response.data.items) {
-        var links =[]
-        for(var i = 0; i < response.data.items.length; i++) {
-          //Call one by one.
-          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
-          links.push(response.data.items[i].image.thumbnailLink);
-        }
-      }
-      else {
-        console.log("Nothing Found")
-      }
-    })
-
-
-    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=51").then(response => {
-      if(response.data.items) {
-        var links =[]
-        for(var i = 0; i < response.data.items.length; i++) {
-          //Call one by one.
-          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
-          links.push(response.data.items[i].image.thumbnailLink);
-        }
-      }
-      else {
-        console.log("Nothing Found")
-      }
-    })
-
-    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=61").then(response => {
-      if(response.data.items) {
-        var links =[]
-        for(var i = 0; i < response.data.items.length; i++) {
-          //Call one by one.
-          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
-          links.push(response.data.items[i].image.thumbnailLink);
-        }
-      }
-      else {
-        console.log("Nothing Found")
-      }
-    })
-
-    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=71").then(response => {
-      if(response.data.items) {
-        var links =[]
-        for(var i = 0; i < response.data.items.length; i++) {
-          //Call one by one.
-          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
-          links.push(response.data.items[i].image.thumbnailLink);
-        }
-      }
-      else {
-        console.log("Nothing Found")
-      }
-    })
-
-    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=81").then(response => {
-      if(response.data.items) {
-        var links =[]
-        for(var i = 0; i < response.data.items.length; i++) {
-          //Call one by one.
-          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
-          links.push(response.data.items[i].image.thumbnailLink);
-        }
-      }
-      else {
-        console.log("Nothing Found")
-      }
-    })
-
-    axios.get(URL+this.state.query+googleCustomSearchURL+"&start=91").then(response => {
-      if(response.data.items) {
-        var links =[]
-        for(var i = 0; i < response.data.items.length; i++) {
-          //Call one by one.
-          this.predictAutoML(response.data.items[i].image.thumbnailLink,response.data.items[i].link);
-          links.push(response.data.items[i].image.thumbnailLink);
-        }
-      }
-      else {
-        console.log("Nothing Found")
-      }
-    })
-    */
-
+  predictAutoMLSocket(link, sourceLink) {
+    var body = {
+      "link": link,
+      "sourceLink": sourceLink
+    }
+    socket.emit('predict', body);
+    return;
   }
 
   predictAutoML(link, sourceLink) {
@@ -483,7 +454,19 @@ class Search extends Component {
         return (
           <div className ="container">
             <div className = "row">
-              <div className = "col-md-3"></div>
+              <div className = "col-md-3">
+                {this.state.connectedToServer ?<div></div>:
+                  <div>
+                    <h5>The connection to the server was lost, trying to reconnect</h5>
+                    <div id='loader'>
+                      <SyncLoader
+                          color={'#7ec4ff'}
+                          loading={!this.state.connectedToServer}
+                        />
+                    </div>
+                  </div>
+                }
+              </div>
               <div className = "col-md-6">
                 <div className="span12">
                  <form id="custom-search-form" className="form-search form-horizontal" onSubmit={(event) => {
@@ -569,6 +552,7 @@ class Search extends Component {
                       {isFull ? (this.state.predictions.map((pre, index) =>{
                         if(pre !== null && pre !== undefined){
                           if(pre.score !== null){
+                            console.log(pre.score);
                             if(pre.url === this.state.selectedURL){
                               return <Image key={index} prediction={pre} select={this.selectImage} selectedBool={true} deselect={this.deselectImage} />
                             } else{
